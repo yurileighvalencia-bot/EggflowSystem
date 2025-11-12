@@ -7,9 +7,10 @@ const {
   getFinancialSummary
 } = require('../controllers/transactionController');
 const { protect, authorize } = require('../middleware/auth');
+const { transactionLimiter } = require('../middleware/rateLimiter');
 
-router.post('/walkin-sale', protect, authorize('staff', 'manager'), recordWalkInSale);
-router.post('/expense', protect, authorize('manager'), recordExpense);
+router.post('/walkin-sale', protect, authorize('staff', 'manager'), transactionLimiter, recordWalkInSale);
+router.post('/expense', protect, authorize('manager'), transactionLimiter, recordExpense);
 router.get('/', protect, authorize('manager'), getTransactions);
 router.get('/summary', protect, authorize('manager'), getFinancialSummary);
 

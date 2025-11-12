@@ -5,6 +5,7 @@ const socketIo = require('socket.io');
 const cors = require('cors');
 const connectDB = require('./backend/config/db');
 const { startExpirationChecker } = require('./backend/utils/expirationChecker');
+const { apiLimiter } = require('./backend/middleware/rateLimiter');
 
 // Connect to database
 connectDB();
@@ -22,6 +23,9 @@ const io = socketIo(server, {
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Apply general rate limiting to all API routes
+app.use('/api/', apiLimiter);
 
 // Routes
 app.use('/api/auth', require('./backend/routes/auth'));
