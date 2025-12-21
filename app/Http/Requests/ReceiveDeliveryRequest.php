@@ -16,9 +16,9 @@ class ReceiveDeliveryRequest extends FormRequest
         return [
             'items' => ['required', 'array', 'min:1'],
             'items.*.delivery_item_id' => ['required', 'exists:delivery_items,id'],
-            'items.*.quantity_received' => ['required', 'integer', 'min:0'],
-            'items.*.quantity_rejected' => ['nullable', 'integer', 'min:0'],
-            'items.*.rejection_reason' => ['required_if:items.*.quantity_rejected,>,0', 'nullable', 'string', 'max:500'],
+            'items.*.qty_received' => ['required', 'integer', 'min:0'],
+            'items.*.qty_rejected' => ['nullable', 'integer', 'min:0'],
+            'items.*.rejection_reason' => ['required_if:items.*.qty_rejected,>,0', 'nullable', 'string', 'max:500'],
             'notes' => ['nullable', 'string', 'max:500'],
         ];
     }
@@ -27,6 +27,7 @@ class ReceiveDeliveryRequest extends FormRequest
     {
         return [
             'items.*.rejection_reason.required_if' => 'Please provide a reason for rejected items.',
+            'items.*.qty_received.required' => 'Please specify quantity received for each item.',
         ];
     }
 }

@@ -43,12 +43,12 @@ class InventoryReportService
                     'batch_count' => $catInventory->count(),
                     'batches' => $catInventory->map(fn ($inv) => [
                         'batch_id' => $inv->batch_id,
-                        'batch_number' => $inv->batch->batch_number ?? 'N/A',
+                        'batch_code' => $inv->batch->batch_code ?? 'N/A',
                         'available' => $inv->available_stock,
                         'reserved' => $inv->reserved_stock,
-                        'expiry_date' => $inv->batch->expiry_date?->toDateString(),
-                        'days_until_expiry' => $inv->batch->expiry_date 
-                            ? now()->diffInDays($inv->batch->expiry_date, false) 
+                        'expires_at' => $inv->batch->expires_at?->toDateString(),
+                        'days_until_expiry' => $inv->batch->expires_at 
+                            ? now()->diffInDays($inv->batch->expires_at, false) 
                             : null,
                     ])->values()->toArray(),
                 ];
@@ -104,10 +104,10 @@ class InventoryReportService
             'category_id' => $inv->egg_category_id,
             'category_name' => $inv->eggCategory->name,
             'batch_id' => $inv->batch_id,
-            'batch_number' => $inv->batch->batch_number ?? 'N/A',
+            'batch_code' => $inv->batch->batch_code ?? 'N/A',
             'available_stock' => $inv->available_stock,
-            'reorder_level' => $inv->reorder_level ?? 100,
-            'shortage' => max(0, ($inv->reorder_level ?? 100) - $inv->available_stock),
+            'low_stock_threshold' => $inv->eggCategory->low_stock_threshold ?? 100,
+            'shortage' => max(0, ($inv->eggCategory->low_stock_threshold ?? 100) - $inv->available_stock),
         ])->sortByDesc('shortage')->values();
 
         return [
@@ -124,7 +124,7 @@ class InventoryReportService
     {
         $query = Inventory::with(['shop', 'batch.eggCategory', 'eggCategory'])
             ->whereHas('batch', function ($q) use ($withinDays) {
-                $q->whereBetween('expiry_date', [now(), now()->addDays($withinDays)]);
+                $q->whereBetween('expires_at', [now(), now()->addDays($withinDays)]);
             })
             ->where(function ($q) {
                 $q->where('available_stock', '>', 0)
@@ -139,7 +139,7 @@ class InventoryReportService
 
         // Group by days until expiry
         $byDays = $inventory->groupBy(function ($inv) {
-            return $inv->batch->expiry_date->diffInDays(now());
+            return $inv->batch->expires_at->diffInDays(now());
         })->sortKeys();
 
         $items = $inventory->map(fn ($inv) => [
@@ -148,11 +148,11 @@ class InventoryReportService
             'category_id' => $inv->egg_category_id,
             'category_name' => $inv->eggCategory->name,
             'batch_id' => $inv->batch_id,
-            'batch_number' => $inv->batch->batch_number ?? 'N/A',
+            'batch_code' => $inv->batch->batch_code ?? 'N/A',
             'available_stock' => $inv->available_stock,
             'reserved_stock' => $inv->reserved_stock,
-            'expiry_date' => $inv->batch->expiry_date->toDateString(),
-            'days_until_expiry' => $inv->batch->expiry_date->diffInDays(now()),
+            'expires_at' => $inv->batch->expires_at->toDateString(),
+            'days_until_expiry' => $inv->batch->expires_at->diffInDays(now()),
         ])->sortBy('days_until_expiry')->values();
 
         return [
@@ -183,7 +183,7 @@ class InventoryReportService
                 $q->where('shop_id', $shopId);
             }
         })
-        ->selectRaw('egg_category_id, SUM(quantity_received) as total')
+        ->selectRaw('egg_category_id, SUM(qty_received) as total')
         ->groupBy('egg_category_id')
         ->get()
         ->keyBy('egg_category_id');
@@ -275,7 +275,7 @@ class InventoryReportService
                 'category_id' => $inv->egg_category_id,
                 'category_name' => $inv->eggCategory->name,
                 'batch_id' => $inv->batch_id,
-                'batch_number' => $inv->batch->batch_number ?? 'N/A',
+                'batch_code' => $inv->batch->batch_code ?? 'N/A',
                 'stock' => $totalStock,
                 'unit_price' => (float) $unitPrice,
                 'value' => (float) ($totalStock * $unitPrice),

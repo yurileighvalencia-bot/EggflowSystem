@@ -14,6 +14,7 @@ class BatchExpired
 
     public function __construct(
         public Batch $batch,
-        public User $expiredBy
+        public int $quantity,
+        public ?User $expiredBy = null
     ) {}
 }

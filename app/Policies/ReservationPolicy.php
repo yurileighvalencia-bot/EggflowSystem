@@ -103,8 +103,11 @@ class ReservationPolicy
             return false;
         }
 
-        // Can only fulfill confirmed reservations
-        return $reservation->status === Reservation::STATUS_CONFIRMED;
+        // Can fulfill confirmed or ready reservations
+        return in_array($reservation->status, [
+            Reservation::STATUS_CONFIRMED,
+            Reservation::STATUS_READY,
+        ]);
     }
 
     public function delete(User $user, Reservation $reservation): bool

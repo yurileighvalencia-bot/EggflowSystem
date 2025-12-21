@@ -72,16 +72,15 @@ class ExpireReservations extends Command
                     // Release reserved stock for each item
                     foreach ($reservation->items as $item) {
                         $inventoryService->releaseReservedStock(
-                            shopId: $reservation->shop_id,
-                            eggCategoryId: $item->egg_category_id,
-                            quantity: $item->quantity,
-                            reason: "Reservation #{$reservation->id} expired"
+                            $reservation->shop_id,
+                            $item->egg_category_id,
+                            $item->quantity
                         );
                     }
 
                     // Update reservation status
                     $reservation->update([
-                        'status' => 'expired',
+                        'status' => Reservation::STATUS_EXPIRED,
                         'expired_at' => now(),
                     ]);
 

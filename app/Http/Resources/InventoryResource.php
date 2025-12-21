@@ -25,9 +25,8 @@ class InventoryResource extends JsonResource
             'available_stock' => $this->available_stock,
             'reserved_stock' => $this->reserved_stock,
             'total_stock' => $this->available_stock + $this->reserved_stock,
-            'reorder_level' => $this->reorder_level,
-            'is_low_stock' => $this->available_stock <= $this->reorder_level,
-            'unit_price' => (float) $this->unit_price,
+            'low_stock_threshold' => $this->eggCategory?->low_stock_threshold ?? 0,
+            'is_low_stock' => $this->available_stock <= ($this->eggCategory?->low_stock_threshold ?? 0),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

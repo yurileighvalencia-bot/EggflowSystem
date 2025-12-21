@@ -1,0 +1,79 @@
+<?php
+
+namespace Database\Factories;
+
+use App\Models\SaleItem;
+use App\Models\Sale;
+use App\Models\Batch;
+use App\Models\EggCategory;
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\SaleItem>
+ */
+class SaleItemFactory extends Factory
+{
+    protected $model = SaleItem::class;
+
+    /**
+     * Define the model's default state.
+     */
+    public function definition(): array
+    {
+        $quantity = fake()->numberBetween(6, 60);
+        $unitPrice = fake()->randomFloat(2, 5, 15);
+        
+        return [
+            'sale_id' => Sale::factory(),
+            'batch_id' => Batch::factory(),
+            'egg_category_id' => EggCategory::factory(),
+            'quantity' => $quantity,
+            'unit_price' => $unitPrice,
+            'subtotal' => $quantity * $unitPrice,
+        ];
+    }
+
+    /**
+     * Set a specific quantity and price.
+     */
+    public function withDetails(int $quantity, float $unitPrice): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'quantity' => $quantity,
+            'unit_price' => $unitPrice,
+            'subtotal' => $quantity * $unitPrice,
+        ]);
+    }
+
+    /**
+     * Create a small purchase item.
+     */
+    public function small(): static
+    {
+        return $this->state(function (array $attributes) {
+            $quantity = fake()->numberBetween(6, 12);
+            $unitPrice = $attributes['unit_price'] ?? fake()->randomFloat(2, 5, 15);
+            
+            return [
+                'quantity' => $quantity,
+                'subtotal' => $quantity * $unitPrice,
+            ];
+        });
+    }
+
+    /**
+     * Create a bulk purchase item.
+     */
+    public function bulk(): static
+    {
+        return $this->state(function (array $attributes) {
+            $quantity = fake()->numberBetween(100, 500);
+            $unitPrice = $attributes['unit_price'] ?? fake()->randomFloat(2, 5, 15);
+            
+            return [
+                'quantity' => $quantity,
+                'subtotal' => $quantity * $unitPrice,
+            ];
+        });
+    }
+}

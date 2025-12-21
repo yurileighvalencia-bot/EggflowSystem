@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Events\BatchExpired;
 use App\Models\Batch;
 use App\Models\Inventory;
+use App\Models\WastageLog;
 use App\Services\InventoryService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
@@ -59,7 +60,7 @@ class CheckBatchExpiry extends Command
 
         // Find inventory entries for expired batches
         $expiredInventory = Inventory::whereHas('batch', function ($query) {
-                $query->where('expiry_date', '<', Carbon::today());
+                $query->where('expires_at', '<', Carbon::today());
             })
             ->where(function ($query) {
                 $query->where('available_stock', '>', 0)
@@ -79,12 +80,12 @@ class CheckBatchExpiry extends Command
             $this->table(
                 ['Batch ID', 'Category', 'Shop', 'Available', 'Reserved', 'Expiry Date'],
                 $expiredInventory->map(fn ($inv) => [
-                    $inv->batch->batch_number,
+                    $inv->batch->batch_code,
                     $inv->batch->eggCategory->name,
                     $inv->shop->name,
                     $inv->available_stock,
                     $inv->reserved_stock,
-                    $inv->batch->expiry_date->format('Y-m-d'),
+                    $inv->batch->expires_at->format('Y-m-d'),
                 ])
             );
             $this->warn('Dry run - no changes made.');
@@ -102,13 +103,13 @@ class CheckBatchExpiry extends Command
                     if ($totalWaste > 0) {
                         // Record wastage for the expired stock
                         $inventoryService->recordWastage(
-                            shopId: $inventory->shop_id,
-                            batchId: $inventory->batch_id,
-                            eggCategoryId: $inventory->batch->egg_category_id,
-                            quantity: $totalWaste,
-                            source: 'delivery', // It came from delivered stock
-                            reason: 'Batch expired - automatic wastage',
-                            reportedBy: null // System action
+                            $inventory->shop_id,
+                            $inventory->batch->egg_category_id,
+                            $totalWaste,
+                            WastageLog::SOURCE_BATCH_EXPIRED,
+                            'Batch expired - automatic wastage',
+                            null, // System action - no user
+                            $inventory->batch_id
                         );
 
                         // Zero out the inventory
@@ -125,10 +126,10 @@ class CheckBatchExpiry extends Command
                 });
 
                 $wastedQuantity = $inventory->available_stock + $inventory->reserved_stock;
-                $this->line("✓ Processed expired batch #{$inventory->batch->batch_number} ({$wastedQuantity} eggs wasted)");
+                $this->line("✓ Processed expired batch #{$inventory->batch->batch_code} ({$wastedQuantity} eggs wasted)");
             } catch (\Exception $e) {
                 $errorCount++;
-                $this->error("✗ Failed to process batch #{$inventory->batch->batch_number}: " . $e->getMessage());
+                $this->error("✗ Failed to process batch #{$inventory->batch->batch_code}: " . $e->getMessage());
                 Log::error("Failed to process expired batch", [
                     'batch_id' => $inventory->batch_id,
                     'inventory_id' => $inventory->id,
@@ -148,7 +149,7 @@ class CheckBatchExpiry extends Command
         $this->info("Checking for batches expiring within {$warnDays} days...");
 
         $expiringInventory = Inventory::whereHas('batch', function ($query) use ($warnDays) {
-                $query->whereBetween('expiry_date', [
+                $query->whereBetween('expires_at', [
                     Carbon::today(),
                     Carbon::today()->addDays($warnDays),
                 ]);
@@ -170,13 +171,13 @@ class CheckBatchExpiry extends Command
         $this->table(
             ['Batch ID', 'Category', 'Shop', 'Available', 'Reserved', 'Expiry Date', 'Days Left'],
             $expiringInventory->map(fn ($inv) => [
-                $inv->batch->batch_number,
+                $inv->batch->batch_code,
                 $inv->batch->eggCategory->name,
                 $inv->shop->name,
                 $inv->available_stock,
                 $inv->reserved_stock,
-                $inv->batch->expiry_date->format('Y-m-d'),
-                $inv->batch->expiry_date->diffInDays(Carbon::today()),
+                $inv->batch->expires_at->format('Y-m-d'),
+                $inv->batch->expires_at->diffInDays(Carbon::today()),
             ])
         );
 
@@ -187,7 +188,7 @@ class CheckBatchExpiry extends Command
                 'batch_id' => $inv->batch_id,
                 'shop_id' => $inv->shop_id,
                 'available' => $inv->available_stock,
-                'expiry' => $inv->batch->expiry_date->toDateString(),
+                'expiry' => $inv->batch->expires_at->toDateString(),
             ])->toArray(),
         ]);
     }

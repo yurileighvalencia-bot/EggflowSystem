@@ -20,7 +20,7 @@
                         <th>Category</th>
                         <th>Batch</th>
                         <th class="text-right">Current Stock</th>
-                        <th class="text-right">Reorder Level</th>
+                        <th class="text-right">Low Stock Threshold</th>
                         <th class="text-right">Shortage</th>
                         <th>Status</th>
                     </tr>
@@ -30,12 +30,12 @@
                         <tr>
                             <td>{{ $item['shop_name'] }}</td>
                             <td>{{ $item['category_name'] }}</td>
-                            <td>{{ $item['batch_number'] }}</td>
+                            <td>{{ $item['batch_code'] }}</td>
                             <td class="text-right">{{ number_format($item['available_stock']) }}</td>
-                            <td class="text-right">{{ number_format($item['reorder_level']) }}</td>
+                            <td class="text-right">{{ number_format($item['low_stock_threshold']) }}</td>
                             <td class="text-right negative">-{{ number_format($item['shortage']) }}</td>
                             <td>
-                                @if($item['available_stock'] <= $item['reorder_level'] * 0.5)
+                                @if($item['available_stock'] <= $item['low_stock_threshold'] * 0.5)
                                     <span class="badge badge-danger">Critical</span>
                                 @else
                                     <span class="badge badge-warning">Low</span>

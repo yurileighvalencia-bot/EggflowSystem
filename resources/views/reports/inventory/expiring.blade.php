@@ -74,10 +74,10 @@
                         <tr>
                             <td>{{ $item['shop_name'] }}</td>
                             <td>{{ $item['category_name'] }}</td>
-                            <td>{{ $item['batch_number'] }}</td>
+                            <td>{{ $item['batch_code'] }}</td>
                             <td class="text-right">{{ number_format($item['available_stock']) }}</td>
                             <td class="text-right">{{ number_format($item['reserved_stock']) }}</td>
-                            <td>{{ $item['expiry_date'] }}</td>
+                            <td>{{ $item['expires_at'] }}</td>
                             <td class="text-right {{ $item['days_until_expiry'] <= 1 ? 'negative' : '' }}">
                                 {{ $item['days_until_expiry'] }}
                             </td>

@@ -149,27 +149,26 @@ class WastageReportService
         $discrepancies = DB::table('delivery_discrepancies')
             ->join('deliveries', 'delivery_discrepancies.delivery_id', '=', 'deliveries.id')
             ->join('shops', 'deliveries.shop_id', '=', 'shops.id')
-            ->join('farms', 'deliveries.farm_id', '=', 'farms.id')
+            ->join('restock_requests', 'deliveries.restock_request_id', '=', 'restock_requests.id')
             ->whereBetween('delivery_discrepancies.created_at', [$startDate, $endDate])
             ->select([
                 'delivery_discrepancies.*',
                 'shops.name as shop_name',
-                'farms.name as farm_name',
-                'deliveries.delivery_number',
+                'deliveries.id as delivery_id',
             ])
             ->get();
 
-        // Group by type
-        $byType = $discrepancies->groupBy('discrepancy_type')->map(fn ($group) => [
+        // Group by resolution status
+        $byResolution = $discrepancies->groupBy(fn ($d) => $d->resolution ?? 'pending')->map(fn ($group) => [
             'count' => $group->count(),
-            'total_shortage' => $group->sum(fn ($d) => $d->quantity_expected - $d->quantity_received),
+            'total_missing' => $group->sum('qty_missing'),
         ]);
 
-        // Group by route (farm -> shop)
-        $byRoute = $discrepancies->groupBy(fn ($d) => "{$d->farm_name} → {$d->shop_name}")
+        // Group by shop
+        $byShop = $discrepancies->groupBy('shop_name')
             ->map(fn ($group) => [
                 'count' => $group->count(),
-                'total_shortage' => $group->sum(fn ($d) => $d->quantity_expected - $d->quantity_received),
+                'total_missing' => $group->sum('qty_missing'),
             ])
             ->sortByDesc('count');
 
@@ -184,15 +183,15 @@ class WastageReportService
             ],
             'summary' => [
                 'total_discrepancies' => $discrepancies->count(),
-                'total_shortage' => $discrepancies->sum(fn ($d) => max(0, $d->quantity_expected - $d->quantity_received)),
+                'total_missing' => $discrepancies->sum('qty_missing'),
                 'resolved' => $resolved,
                 'pending' => $pending,
                 'resolution_rate' => $discrepancies->count() > 0 
                     ? round(($resolved / $discrepancies->count()) * 100, 2) 
                     : 100,
             ],
-            'by_type' => $byType->toArray(),
-            'by_route' => $byRoute->take(10)->toArray(),
+            'by_resolution' => $byResolution->toArray(),
+            'by_shop' => $byShop->take(10)->toArray(),
         ];
     }
 

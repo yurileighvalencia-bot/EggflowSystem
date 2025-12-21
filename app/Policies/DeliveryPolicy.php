@@ -48,7 +48,8 @@ class DeliveryPolicy
             return false;
         }
 
-        return $delivery->status === Delivery::STATUS_PENDING;
+        // Deliveries start as dispatched, so this checks if not yet dispatched
+        return $delivery->status === Delivery::STATUS_DISPATCHED;
     }
 
     public function receive(User $user, Delivery $delivery): bool
@@ -57,8 +58,8 @@ class DeliveryPolicy
             return false;
         }
 
-        // Must be in transit
-        if ($delivery->status !== Delivery::STATUS_IN_TRANSIT) {
+        // Must be dispatched or in transit
+        if (!in_array($delivery->status, [Delivery::STATUS_DISPATCHED, Delivery::STATUS_IN_TRANSIT])) {
             return false;
         }
 
@@ -76,9 +77,9 @@ class DeliveryPolicy
             return false;
         }
 
-        // Can only report discrepancies for delivered items
+        // Can only report discrepancies for received items
         return in_array($delivery->status, [
-            Delivery::STATUS_DELIVERED,
+            Delivery::STATUS_RECEIVED,
             Delivery::STATUS_PARTIAL,
         ]);
     }

@@ -5,7 +5,7 @@
         <table style="margin-bottom: 20px;">
             <tr>
                 <td style="width: 50%;">
-                    <strong>Delivery #:</strong> {{ $delivery->delivery_number }}<br>
+                    <strong>Delivery #:</strong> {{ $delivery->id }}<br>
                     <strong>Date:</strong> {{ $delivery->created_at->format('F j, Y') }}<br>
                     <strong>Status:</strong> 
                     <span class="badge badge-{{ $delivery->status === 'received' ? 'success' : ($delivery->status === 'dispatched' ? 'warning' : 'info') }}">
@@ -13,8 +13,8 @@
                     </span>
                 </td>
                 <td style="width: 50%; text-align: right;">
-                    <strong>Expected Arrival:</strong><br>
-                    {{ $delivery->expected_arrival ? $delivery->expected_arrival->format('M j, Y g:i A') : 'Not specified' }}
+                    <strong>Dispatched At:</strong><br>
+                    {{ $delivery->dispatched_at ? $delivery->dispatched_at->format('M j, Y g:i A') : 'Not specified' }}
                 </td>
             </tr>
         </table>
@@ -25,47 +25,23 @@
             <tr>
                 <td style="width: 50%; vertical-align: top;">
                     <h3 style="color: #f97316; margin-bottom: 10px;">From (Farm)</h3>
-                    <strong>{{ $delivery->farm->name }}</strong><br>
-                    {{ $delivery->farm->location ?? '' }}<br>
-                    {{ $delivery->farm->phone ?? '' }}<br>
-                    Contact: {{ $delivery->farm->contact_person ?? 'N/A' }}
+                    @if($delivery->restockRequest?->shop?->farm)
+                        <strong>{{ $delivery->restockRequest->shop->farm->name }}</strong><br>
+                        {{ $delivery->restockRequest->shop->farm->address ?? '' }}<br>
+                        {{ $delivery->restockRequest->shop->farm->contact ?? '' }}
+                    @else
+                        <em>Farm details unavailable</em>
+                    @endif
                 </td>
                 <td style="width: 50%; vertical-align: top;">
                     <h3 style="color: #f97316; margin-bottom: 10px;">To (Shop)</h3>
                     <strong>{{ $delivery->shop->name }}</strong><br>
-                    {{ $delivery->shop->location ?? '' }}<br>
-                    {{ $delivery->shop->phone ?? '' }}<br>
-                    Contact: {{ $delivery->shop->contact_person ?? 'N/A' }}
+                    {{ $delivery->shop->address ?? '' }}<br>
+                    Contact: {{ $delivery->shop->contact ?? 'N/A' }}
                 </td>
             </tr>
         </table>
     </div>
-
-    @if($delivery->driver_name || $delivery->vehicle_info)
-        <div class="section">
-            <h2 class="section-title">Transport Details</h2>
-            <table>
-                @if($delivery->driver_name)
-                    <tr>
-                        <td style="width: 150px;">Driver Name:</td>
-                        <td>{{ $delivery->driver_name }}</td>
-                    </tr>
-                @endif
-                @if($delivery->driver_phone)
-                    <tr>
-                        <td>Driver Phone:</td>
-                        <td>{{ $delivery->driver_phone }}</td>
-                    </tr>
-                @endif
-                @if($delivery->vehicle_info)
-                    <tr>
-                        <td>Vehicle:</td>
-                        <td>{{ $delivery->vehicle_info }}</td>
-                    </tr>
-                @endif
-            </table>
-        </div>
-    @endif
 
     <div class="section">
         <h2 class="section-title">Items</h2>
@@ -76,31 +52,36 @@
                     <th>Category</th>
                     <th class="text-right">Qty Sent</th>
                     <th class="text-right">Qty Received</th>
-                    <th class="text-right">Difference</th>
+                    <th class="text-right">Qty Rejected</th>
+                    <th class="text-right">Missing</th>
                 </tr>
             </thead>
             <tbody>
-                @php $totalSent = 0; $totalReceived = 0; @endphp
+                @php $totalSent = 0; $totalReceived = 0; $totalRejected = 0; @endphp
                 @foreach($delivery->items as $item)
                     @php 
-                        $totalSent += $item->quantity_sent;
-                        $totalReceived += $item->quantity_received ?? 0;
-                        $diff = ($item->quantity_received ?? $item->quantity_sent) - $item->quantity_sent;
+                        $totalSent += $item->qty_sent;
+                        $totalReceived += $item->qty_received ?? 0;
+                        $totalRejected += $item->qty_rejected ?? 0;
+                        $missing = $item->missing_quantity;
                     @endphp
                     <tr>
-                        <td>{{ $item->batch->batch_number ?? 'N/A' }}</td>
-                        <td>{{ $item->batch->eggCategory->name ?? 'Unknown' }}</td>
-                        <td class="text-right">{{ number_format($item->quantity_sent) }}</td>
+                        <td>{{ $item->batch->batch_code ?? 'N/A' }}</td>
+                        <td>{{ $item->eggCategory->name ?? 'Unknown' }}</td>
+                        <td class="text-right">{{ number_format($item->qty_sent) }}</td>
                         <td class="text-right">
-                            @if($item->quantity_received !== null)
-                                {{ number_format($item->quantity_received) }}
+                            @if($item->qty_received !== null)
+                                {{ number_format($item->qty_received) }}
                             @else
                                 <em style="color: #999;">Pending</em>
                             @endif
                         </td>
-                        <td class="text-right {{ $diff < 0 ? 'negative' : ($diff > 0 ? 'positive' : '') }}">
-                            @if($item->quantity_received !== null)
-                                {{ $diff >= 0 ? '+' : '' }}{{ number_format($diff) }}
+                        <td class="text-right {{ ($item->qty_rejected ?? 0) > 0 ? 'negative' : '' }}">
+                            {{ number_format($item->qty_rejected ?? 0) }}
+                        </td>
+                        <td class="text-right {{ $missing > 0 ? 'negative' : '' }}">
+                            @if($item->qty_received !== null)
+                                {{ $missing > 0 ? '-' . number_format($missing) : '0' }}
                             @else
                                 -
                             @endif
@@ -113,8 +94,10 @@
                     <td colspan="2">TOTAL</td>
                     <td class="text-right">{{ number_format($totalSent) }}</td>
                     <td class="text-right">{{ number_format($totalReceived) }}</td>
-                    <td class="text-right {{ ($totalReceived - $totalSent) < 0 ? 'negative' : '' }}">
-                        {{ ($totalReceived - $totalSent) >= 0 ? '+' : '' }}{{ number_format($totalReceived - $totalSent) }}
+                    <td class="text-right">{{ number_format($totalRejected) }}</td>
+                    <td class="text-right {{ ($totalSent - $totalReceived - $totalRejected) > 0 ? 'negative' : '' }}">
+                        @php $totalMissing = $totalSent - $totalReceived - $totalRejected; @endphp
+                        {{ $totalMissing > 0 ? '-' . number_format($totalMissing) : '0' }}
                     </td>
                 </tr>
             </tfoot>

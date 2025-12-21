@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Receipt #{{ $sale->sale_number }}</title>
+    <title>Receipt #{{ $sale->sale_code }}</title>
     <style>
         * {
             margin: 0;
@@ -10,7 +10,7 @@
             box-sizing: border-box;
         }
         body {
-            font-family: 'Courier New', monospace;
+            font-family: 'DejaVu Sans', sans-serif;
             font-size: 9pt;
             line-height: 1.3;
             width: 80mm;
@@ -96,8 +96,8 @@
         <div class="logo">EggFlow</div>
         <div class="shop-info">
             <strong>{{ $sale->shop->name }}</strong><br>
-            {{ $sale->shop->location ?? '' }}<br>
-            {{ $sale->shop->phone ?? '' }}
+            {{ $sale->shop->address ?? '' }}<br>
+            {{ $sale->shop->contact ?? '' }}
         </div>
     </div>
 
@@ -105,7 +105,7 @@
         <table>
             <tr>
                 <td>Receipt #:</td>
-                <td class="text-right">{{ $sale->sale_number }}</td>
+                <td class="text-right">{{ $sale->sale_code }}</td>
             </tr>
             <tr>
                 <td>Date:</td>
@@ -117,7 +117,7 @@
             </tr>
             <tr>
                 <td>Cashier:</td>
-                <td class="text-right">{{ $sale->cashier->name ?? 'N/A' }}</td>
+                <td class="text-right">{{ $sale->staff->name ?? 'N/A' }}</td>
             </tr>
             @if($sale->customer)
                 <tr>
@@ -133,8 +133,8 @@
             <div class="item">
                 <div class="item-name">{{ $item->eggCategory->name ?? 'Egg' }}</div>
                 <div class="item-details">
-                    <span>{{ $item->quantity }} x ₱{{ number_format($item->unit_price, 2) }}</span>
-                    <span>₱{{ number_format($item->line_total, 2) }}</span>
+                    <span>{{ $item->quantity }} x PHP {{ number_format($item->unit_price, 2) }}</span>
+                    <span>PHP {{ number_format($item->line_total, 2) }}</span>
                 </div>
             </div>
         @endforeach
@@ -144,23 +144,23 @@
         <table>
             <tr>
                 <td>Subtotal:</td>
-                <td class="text-right">₱{{ number_format($sale->subtotal, 2) }}</td>
+                <td class="text-right">PHP {{ number_format($sale->subtotal, 2) }}</td>
             </tr>
             @if($sale->tax > 0)
                 <tr>
                     <td>Tax:</td>
-                    <td class="text-right">₱{{ number_format($sale->tax, 2) }}</td>
+                    <td class="text-right">PHP {{ number_format($sale->tax, 2) }}</td>
                 </tr>
             @endif
-            @if($sale->discount > 0)
+            @if(($sale->discount ?? 0) > 0)
                 <tr>
                     <td>Discount:</td>
-                    <td class="text-right">-₱{{ number_format($sale->discount, 2) }}</td>
+                    <td class="text-right">-PHP {{ number_format($sale->discount, 2) }}</td>
                 </tr>
             @endif
             <tr class="total-row">
                 <td>TOTAL:</td>
-                <td class="text-right">₱{{ number_format($sale->total, 2) }}</td>
+                <td class="text-right">PHP {{ number_format($sale->total, 2) }}</td>
             </tr>
         </table>
     </div>
@@ -169,16 +169,16 @@
         <table>
             <tr>
                 <td>Payment Method:</td>
-                <td class="text-right">{{ ucfirst($sale->payment_method) }}</td>
+                <td class="text-right">{{ ucfirst($sale->payment_method ?? 'Cash') }}</td>
             </tr>
-            @if($sale->amount_tendered)
+            @if($sale->amount_tendered ?? false)
                 <tr>
                     <td>Amount Tendered:</td>
-                    <td class="text-right">₱{{ number_format($sale->amount_tendered, 2) }}</td>
+                    <td class="text-right">PHP {{ number_format($sale->amount_tendered, 2) }}</td>
                 </tr>
                 <tr>
                     <td>Change:</td>
-                    <td class="text-right">₱{{ number_format($sale->change, 2) }}</td>
+                    <td class="text-right">PHP {{ number_format($sale->change ?? 0, 2) }}</td>
                 </tr>
             @endif
         </table>

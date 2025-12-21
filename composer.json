@@ -8,7 +8,9 @@
     "require": {
         "php": "^8.2",
         "barryvdh/laravel-dompdf": "^3.0",
+        "dedoc/scramble": "^0.13.8",
         "laravel/framework": "^12.0",
+        "laravel/reverb": "^1.6",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "owen-it/laravel-auditing": "^14.0",

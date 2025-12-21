@@ -21,6 +21,8 @@ class LogExpiredBatchWastage implements ShouldQueue
             return;
         }
 
+        $loggedById = $event->expiredBy?->id;
+
         // Log wastage for remaining quantity in the batch
         WastageLog::create([
             'shop_id' => null, // Batch expired at farm level
@@ -30,7 +32,7 @@ class LogExpiredBatchWastage implements ShouldQueue
             'quantity' => $batch->current_quantity,
             'source' => WastageLog::SOURCE_BATCH_EXPIRED,
             'reason' => "Batch {$batch->batch_code} expired on {$batch->expires_at->format('Y-m-d')}",
-            'logged_by' => $event->expiredBy->id,
+            'logged_by' => $loggedById,
             'logged_at' => now(),
         ]);
 
@@ -48,7 +50,7 @@ class LogExpiredBatchWastage implements ShouldQueue
                 'quantity' => $inventory->available_stock,
                 'source' => WastageLog::SOURCE_BATCH_EXPIRED,
                 'reason' => "Batch {$batch->batch_code} expired - inventory cleared",
-                'logged_by' => $event->expiredBy->id,
+                'logged_by' => $loggedById,
                 'logged_at' => now(),
             ]);
 
