@@ -16,6 +16,7 @@ class StoreReservationRequest extends FormRequest
         return [
             'shop_id' => ['required', 'exists:shops,id'],
             'pickup_date' => ['required', 'date', 'after_or_equal:today'],
+            'pickup_time' => ['nullable', 'date_format:H:i'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.egg_category_id' => ['required', 'exists:egg_categories,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:10000'],

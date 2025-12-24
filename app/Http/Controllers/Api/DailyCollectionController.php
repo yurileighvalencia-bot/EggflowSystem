@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreDailyCollectionRequest;
 use App\Http\Requests\UpdateDailyCollectionRequest;
+use App\Http\Resources\DailyCollectionResource;
 use App\Models\DailyCollection;
 use App\Models\Batch;
 use Illuminate\Http\JsonResponse;
@@ -44,7 +45,7 @@ class DailyCollectionController extends Controller
             ->orderByDesc('created_at')
             ->paginate($request->get('per_page', 15));
 
-        return response()->json($collections);
+        return DailyCollectionResource::collection($collections)->response();
     }
 
     /**
@@ -68,11 +69,20 @@ class DailyCollectionController extends Controller
 
             // Update batch quantity
             $batch->current_quantity += $request->quantity;
+            
+            // Update initial_quantity to track total collected eggs.
+            // This becomes immutable once deliveries start (inventories exist).
+            // Critical for yield/loss calculations.
+            $hasInventory = $batch->inventories()->exists();
+            if (!$hasInventory) {
+                $batch->initial_quantity += $request->quantity;
+            }
+            
             $batch->save();
 
             return response()->json([
                 'message' => 'Daily collection recorded successfully.',
-                'data' => $collection->load(['staff', 'batch', 'eggCategory']),
+                'data' => new DailyCollectionResource($collection->load(['staff', 'batch', 'eggCategory'])),
             ], 201);
         });
     }
@@ -84,9 +94,9 @@ class DailyCollectionController extends Controller
     {
         $this->authorize('view', $collection);
 
-        return response()->json([
-            'data' => $collection->load(['staff', 'batch', 'eggCategory', 'farm', 'revisions.changer']),
-        ]);
+        $collection->load(['staff', 'batch', 'eggCategory', 'farm', 'revisions.changedByUser']);
+
+        return response()->json(['data' => new DailyCollectionResource($collection)]);
     }
 
     /**
@@ -120,7 +130,7 @@ class DailyCollectionController extends Controller
 
             return response()->json([
                 'message' => 'Daily collection updated successfully.',
-                'data' => $collection->fresh(['staff', 'batch', 'eggCategory', 'revisions']),
+                'data' => new DailyCollectionResource($collection->fresh(['staff', 'batch', 'eggCategory', 'revisions'])),
             ]);
         });
     }
@@ -140,7 +150,7 @@ class DailyCollectionController extends Controller
 
         return response()->json([
             'message' => 'Daily collection verified successfully.',
-            'data' => $collection->fresh(['staff', 'verifier']),
+            'data' => new DailyCollectionResource($collection->fresh(['staff', 'verifier'])),
         ]);
     }
 

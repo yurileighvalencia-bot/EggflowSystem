@@ -3,11 +3,15 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
+use App\Http\Requests\UpdatePasswordRequest;
+use App\Http\Requests\AssignRoleRequest;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
@@ -16,6 +20,8 @@ class UserController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', User::class);
+
         $query = User::with(['farm', 'shop', 'roles']);
 
         if ($request->has('role')) {
@@ -37,24 +43,15 @@ class UserController extends Controller
         $users = $query->orderBy('name')
             ->paginate($request->get('per_page', 15));
 
-        return response()->json($users);
+        return UserResource::collection($users)->response();
     }
 
     /**
      * Store a newly created user.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreUserRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'unique:users,email'],
-            'password' => ['required', Password::defaults()],
-            'phone' => ['nullable', 'string', 'max:20'],
-            'address' => ['nullable', 'string', 'max:500'],
-            'farm_id' => ['nullable', 'exists:farms,id'],
-            'shop_id' => ['nullable', 'exists:shops,id'],
-            'role' => ['required', 'in:farm_staff,shop_staff,manager,customer'],
-        ]);
+        $validated = $request->validated();
 
         $user = User::create([
             'name' => $validated['name'],
@@ -71,7 +68,7 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'User created successfully.',
-            'data' => $user->load(['farm', 'shop', 'roles']),
+            'data' => new UserResource($user->load(['farm', 'shop', 'roles'])),
         ], 201);
     }
 
@@ -80,45 +77,33 @@ class UserController extends Controller
      */
     public function show(User $user): JsonResponse
     {
+        $this->authorize('view', $user);
+
         return response()->json([
-            'data' => $user->load(['farm', 'shop', 'roles', 'permissions']),
+            'data' => new UserResource($user->load(['farm', 'shop', 'roles', 'permissions'])),
         ]);
     }
 
     /**
      * Update the specified user.
      */
-    public function update(Request $request, User $user): JsonResponse
+    public function update(UpdateUserRequest $request, User $user): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255'],
-            'email' => ['sometimes', 'email', 'unique:users,email,' . $user->id],
-            'phone' => ['nullable', 'string', 'max:20'],
-            'address' => ['nullable', 'string', 'max:500'],
-            'farm_id' => ['nullable', 'exists:farms,id'],
-            'shop_id' => ['nullable', 'exists:shops,id'],
-            'is_active' => ['nullable', 'boolean'],
-        ]);
-
-        $user->update($validated);
+        $user->update($request->validated());
 
         return response()->json([
             'message' => 'User updated successfully.',
-            'data' => $user->fresh(['farm', 'shop', 'roles']),
+            'data' => new UserResource($user->fresh(['farm', 'shop', 'roles'])),
         ]);
     }
 
     /**
      * Update user's password.
      */
-    public function updatePassword(Request $request, User $user): JsonResponse
+    public function updatePassword(UpdatePasswordRequest $request, User $user): JsonResponse
     {
-        $validated = $request->validate([
-            'password' => ['required', Password::defaults(), 'confirmed'],
-        ]);
-
         $user->update([
-            'password' => Hash::make($validated['password']),
+            'password' => Hash::make($request->validated()['password']),
         ]);
 
         return response()->json([
@@ -135,24 +120,20 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'User status updated.',
-            'data' => $user->fresh(),
+            'data' => new UserResource($user->fresh()),
         ]);
     }
 
     /**
      * Assign role to user.
      */
-    public function assignRole(Request $request, User $user): JsonResponse
+    public function assignRole(AssignRoleRequest $request, User $user): JsonResponse
     {
-        $validated = $request->validate([
-            'role' => ['required', 'in:farm_staff,shop_staff,manager,customer'],
-        ]);
-
-        $user->syncRoles([$validated['role']]);
+        $user->syncRoles([$request->validated()['role']]);
 
         return response()->json([
             'message' => 'Role assigned successfully.',
-            'data' => $user->fresh(['roles']),
+            'data' => new UserResource($user->fresh(['roles'])),
         ]);
     }
 }

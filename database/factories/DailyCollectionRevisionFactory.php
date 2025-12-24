@@ -20,12 +20,12 @@ class DailyCollectionRevisionFactory extends Factory
     public function definition(): array
     {
         $oldQuantity = fake()->numberBetween(100, 400);
-        $newQuantity = $oldQuantity + fake()->numberBetween(-50, 50);
+        $newQuantity = max(0, $oldQuantity + fake()->numberBetween(-50, 50));
         
         return [
             'daily_collection_id' => DailyCollection::factory(),
-            'old_quantity' => $oldQuantity,
-            'new_quantity' => max(0, $newQuantity),
+            'old_values' => ['quantity' => $oldQuantity],
+            'new_values' => ['quantity' => $newQuantity],
             'reason' => fake()->randomElement([
                 'Recount after quality inspection',
                 'Data entry error correction',
@@ -33,7 +33,8 @@ class DailyCollectionRevisionFactory extends Factory
                 'Manager review adjustment',
                 'Damaged eggs removed from count',
             ]),
-            'revised_by' => User::factory(),
+            'changed_by' => User::factory(),
+            'changed_at' => now(),
         ];
     }
 
@@ -43,12 +44,12 @@ class DailyCollectionRevisionFactory extends Factory
     public function increase(): static
     {
         return $this->state(function (array $attributes) {
-            $oldQuantity = $attributes['old_quantity'] ?? fake()->numberBetween(100, 300);
+            $oldQuantity = $attributes['old_values']['quantity'] ?? fake()->numberBetween(100, 300);
             $increase = fake()->numberBetween(10, 50);
             
             return [
-                'old_quantity' => $oldQuantity,
-                'new_quantity' => $oldQuantity + $increase,
+                'old_values' => ['quantity' => $oldQuantity],
+                'new_values' => ['quantity' => $oldQuantity + $increase],
                 'reason' => 'Found additional eggs during recount',
             ];
         });
@@ -60,12 +61,12 @@ class DailyCollectionRevisionFactory extends Factory
     public function decrease(): static
     {
         return $this->state(function (array $attributes) {
-            $oldQuantity = $attributes['old_quantity'] ?? fake()->numberBetween(100, 300);
+            $oldQuantity = $attributes['old_values']['quantity'] ?? fake()->numberBetween(100, 300);
             $decrease = fake()->numberBetween(10, 50);
             
             return [
-                'old_quantity' => $oldQuantity,
-                'new_quantity' => max(0, $oldQuantity - $decrease),
+                'old_values' => ['quantity' => $oldQuantity],
+                'new_values' => ['quantity' => max(0, $oldQuantity - $decrease)],
                 'reason' => 'Damaged eggs removed from count',
             ];
         });

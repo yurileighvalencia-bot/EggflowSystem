@@ -38,7 +38,7 @@ class DashboardController extends Controller
             return $this->customerDashboard($request);
         }
 
-        return response()->json(['error' => 'Invalid role'], 403);
+        return response()->json(['message' => 'Invalid role.'], 403);
     }
 
     /**

@@ -17,14 +17,12 @@ class DailyCollectionRevisionResource extends JsonResource
         return [
             'id' => $this->id,
             'daily_collection_id' => $this->daily_collection_id,
-            'previous_quantity' => $this->previous_quantity,
-            'new_quantity' => $this->new_quantity,
-            'quantity_difference' => $this->new_quantity - $this->previous_quantity,
-            'previous_damaged' => $this->previous_damaged,
-            'new_damaged' => $this->new_damaged,
-            'damaged_difference' => $this->new_damaged - $this->previous_damaged,
+            'old_values' => $this->old_values,
+            'new_values' => $this->new_values,
+            'changes' => $this->getChangeSummary(),
             'reason' => $this->reason,
-            'revised_by' => new UserResource($this->whenLoaded('revisedBy')),
+            'changed_by' => new UserResource($this->whenLoaded('changedByUser')),
+            'changed_at' => $this->changed_at?->toISOString(),
             'created_at' => $this->created_at?->toISOString(),
         ];
     }

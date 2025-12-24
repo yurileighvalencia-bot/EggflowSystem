@@ -72,7 +72,7 @@ class DemoDataSeeder extends Seeder
                     'egg_category_id' => $category->id,
                     'collection_date' => now()->subDays($i)->format('Y-m-d'),
                     'quantity' => fake()->numberBetween(100, 500),
-                    'collected_by' => $staff->id,
+                    'staff_id' => $staff->id,
                 ]);
             }
         }
@@ -89,8 +89,8 @@ class DemoDataSeeder extends Seeder
                 $batch = Batch::factory()->create([
                     'farm_id' => $farm->id,
                     'egg_category_id' => $category->id,
-                    'quantity' => fake()->numberBetween(200, 500),
-                    'available_quantity' => fake()->numberBetween(100, 300),
+                    'initial_quantity' => fake()->numberBetween(200, 500),
+                    'current_quantity' => fake()->numberBetween(100, 300),
                     'collection_date' => now()->subDays(fake()->numberBetween(1, 10)),
                     'expires_at' => now()->addDays(fake()->numberBetween(20, 30)),
                     'created_by' => $staff->id,
@@ -102,8 +102,8 @@ class DemoDataSeeder extends Seeder
                     'shop_id' => $shop->id,
                     'batch_id' => $batch->id,
                     'egg_category_id' => $category->id,
-                    'quantity' => fake()->numberBetween(50, 150),
-                    'reserved_quantity' => fake()->numberBetween(0, 20),
+                    'available_stock' => fake()->numberBetween(50, 150),
+                    'reserved_stock' => fake()->numberBetween(0, 20),
                 ]);
             }
 
@@ -250,7 +250,7 @@ class DemoDataSeeder extends Seeder
         for ($i = 0; $i < 15; $i++) {
             $sale = Sale::factory()->walkIn()->create([
                 'shop_id' => $shop->id,
-                'processed_by' => $staff->id,
+                'staff_id' => $staff->id,
             ]);
 
             $category = $categories->random();

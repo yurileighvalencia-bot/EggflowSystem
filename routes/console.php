@@ -38,3 +38,10 @@ Schedule::command('batches:check-expiry --warn-days=3')
     ->dailyAt('01:00')
     ->withoutOverlapping()
     ->appendOutputTo(storage_path('logs/batch-expiry.log'));
+
+// Check for low stock levels and send alerts
+// Runs hourly to balance alerting with avoiding notification spam
+Schedule::command('inventory:check-low-stock --threshold=50')
+    ->hourly()
+    ->withoutOverlapping()
+    ->appendOutputTo(storage_path('logs/low-stock.log'));

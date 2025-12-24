@@ -20,7 +20,10 @@ class FarmFactory extends Factory
         return [
             'name' => fake()->company() . ' Farm',
             'address' => fake()->address(),
-            'contact' => fake()->phoneNumber(),
+            'contact_person' => fake()->name(),
+            'contact_phone' => fake()->phoneNumber(),
+            'contact_email' => fake()->safeEmail(),
+            'is_active' => true,
         ];
     }
 }

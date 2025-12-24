@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ReportDiscrepancyRequest;
 use App\Http\Requests\InvestigateDiscrepancyRequest;
+use App\Http\Resources\DeliveryDiscrepancyResource;
 use App\Models\DeliveryDiscrepancy;
 use App\Events\DiscrepancyInvestigated;
 use Illuminate\Http\JsonResponse;
@@ -17,6 +18,8 @@ class DeliveryDiscrepancyController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', DeliveryDiscrepancy::class);
+
         $query = DeliveryDiscrepancy::with([
             'delivery.restockRequest.shop',
             'deliveryItem.eggCategory',
@@ -47,7 +50,7 @@ class DeliveryDiscrepancyController extends Controller
         $discrepancies = $query->orderByDesc('created_at')
             ->paginate($request->get('per_page', 15));
 
-        return response()->json($discrepancies);
+        return DeliveryDiscrepancyResource::collection($discrepancies)->response();
     }
 
     /**
@@ -55,15 +58,17 @@ class DeliveryDiscrepancyController extends Controller
      */
     public function show(DeliveryDiscrepancy $discrepancy): JsonResponse
     {
-        return response()->json([
-            'data' => $discrepancy->load([
-                'delivery.restockRequest.shop',
-                'delivery.restockRequest.eggCategory',
-                'deliveryItem.batch',
-                'reporter',
-                'investigator',
-            ]),
+        $this->authorize('view', $discrepancy);
+
+        $discrepancy->load([
+            'delivery.restockRequest.shop',
+            'delivery.restockRequest.eggCategory',
+            'deliveryItem.batch',
+            'reporter',
+            'investigator',
         ]);
+
+        return response()->json(['data' => new DeliveryDiscrepancyResource($discrepancy)]);
     }
 
     /**
@@ -86,7 +91,7 @@ class DeliveryDiscrepancyController extends Controller
 
         return response()->json([
             'message' => 'Discrepancy reported successfully.',
-            'data' => $discrepancy->load(['delivery', 'deliveryItem', 'reporter']),
+            'data' => new DeliveryDiscrepancyResource($discrepancy->load(['delivery', 'deliveryItem', 'reporter'])),
         ], 201);
     }
 
@@ -105,7 +110,7 @@ class DeliveryDiscrepancyController extends Controller
 
         return response()->json([
             'message' => 'Discrepancy investigation recorded.',
-            'data' => $discrepancy->fresh(['delivery', 'investigator']),
+            'data' => new DeliveryDiscrepancyResource($discrepancy->fresh(['delivery', 'investigator'])),
         ]);
     }
 

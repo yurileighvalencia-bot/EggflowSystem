@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreFarmRequest;
+use App\Http\Requests\UpdateFarmRequest;
+use App\Http\Resources\FarmResource;
 use App\Models\Farm;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,27 +17,29 @@ class FarmController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $farms = Farm::orderBy('name')->get();
+        $this->authorize('viewAny', Farm::class);
 
-        return response()->json(['data' => $farms]);
+        $query = Farm::withCount(['users', 'shops', 'batches'])
+            ->orderBy('name');
+
+        // Support ?all=true for dropdowns, otherwise paginate
+        if ($request->boolean('all')) {
+            return response()->json(['data' => FarmResource::collection($query->get())]);
+        }
+
+        return FarmResource::collection($query->paginate($request->integer('per_page', 15)))->response();
     }
 
     /**
      * Store a newly created farm.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreFarmRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:100', 'unique:farms,name'],
-            'address' => ['nullable', 'string', 'max:500'],
-            'contact' => ['nullable', 'string', 'max:100'],
-        ]);
-
-        $farm = Farm::create($validated);
+        $farm = Farm::create($request->validated());
 
         return response()->json([
             'message' => 'Farm created successfully.',
-            'data' => $farm,
+            'data' => new FarmResource($farm),
         ], 201);
     }
 
@@ -43,29 +48,26 @@ class FarmController extends Controller
      */
     public function show(Farm $farm): JsonResponse
     {
-        return response()->json([
-            'data' => $farm->load(['users', 'batches' => function ($q) {
-                $q->where('status', 'active')->latest('collection_date')->limit(10);
-            }]),
-        ]);
+        $this->authorize('view', $farm);
+
+        $farm->load(['users', 'batches' => function ($q) {
+            $q->where('status', 'active')->latest('collection_date')->limit(10);
+        }]);
+        $farm->loadCount(['users', 'shops', 'batches']);
+
+        return response()->json(['data' => new FarmResource($farm)]);
     }
 
     /**
      * Update the specified farm.
      */
-    public function update(Request $request, Farm $farm): JsonResponse
+    public function update(UpdateFarmRequest $request, Farm $farm): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['sometimes', 'string', 'max:100', 'unique:farms,name,' . $farm->id],
-            'address' => ['nullable', 'string', 'max:500'],
-            'contact' => ['nullable', 'string', 'max:100'],
-        ]);
-
-        $farm->update($validated);
+        $farm->update($request->validated());
 
         return response()->json([
             'message' => 'Farm updated successfully.',
-            'data' => $farm->fresh(),
+            'data' => new FarmResource($farm->fresh()),
         ]);
     }
 }

@@ -31,9 +31,9 @@ class InventoryService
     {
         return DB::transaction(function () use ($shopId, $categoryId, $quantity) {
             // Lock inventory rows for this shop and category, ordered by batch collection date (FIFO)
-            $inventories = Inventory::where('shop_id', $shopId)
-                ->where('egg_category_id', $categoryId)
-                ->where('available_stock', '>', 0)
+            $inventories = Inventory::where('inventories.shop_id', $shopId)
+                ->where('inventories.egg_category_id', $categoryId)
+                ->where('inventories.available_stock', '>', 0)
                 ->join('batches', 'inventories.batch_id', '=', 'batches.id')
                 ->where('batches.status', 'active')
                 ->orderBy('batches.collection_date', 'asc')
@@ -99,9 +99,9 @@ class InventoryService
     public function reserveStock(int $shopId, int $categoryId, int $quantity): bool
     {
         return DB::transaction(function () use ($shopId, $categoryId, $quantity) {
-            $inventories = Inventory::where('shop_id', $shopId)
-                ->where('egg_category_id', $categoryId)
-                ->where('available_stock', '>', 0)
+            $inventories = Inventory::where('inventories.shop_id', $shopId)
+                ->where('inventories.egg_category_id', $categoryId)
+                ->where('inventories.available_stock', '>', 0)
                 ->join('batches', 'inventories.batch_id', '=', 'batches.id')
                 ->where('batches.status', 'active')
                 ->orderBy('batches.collection_date', 'asc')
@@ -184,9 +184,9 @@ class InventoryService
     public function fulfillReservedStock(int $shopId, int $categoryId, int $quantity): Collection
     {
         return DB::transaction(function () use ($shopId, $categoryId, $quantity) {
-            $inventories = Inventory::where('shop_id', $shopId)
-                ->where('egg_category_id', $categoryId)
-                ->where('reserved_stock', '>', 0)
+            $inventories = Inventory::where('inventories.shop_id', $shopId)
+                ->where('inventories.egg_category_id', $categoryId)
+                ->where('inventories.reserved_stock', '>', 0)
                 ->join('batches', 'inventories.batch_id', '=', 'batches.id')
                 ->orderBy('batches.collection_date', 'asc')
                 ->select('inventories.*')

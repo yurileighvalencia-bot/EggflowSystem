@@ -27,7 +27,7 @@ class ReservationItemFactory extends Factory
             'egg_category_id' => EggCategory::factory(),
             'quantity' => $quantity,
             'unit_price' => $unitPrice,
-            'subtotal' => $quantity * $unitPrice,
+            'line_total' => $quantity * $unitPrice,
         ];
     }
 
@@ -39,7 +39,7 @@ class ReservationItemFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'quantity' => $quantity,
             'unit_price' => $unitPrice,
-            'subtotal' => $quantity * $unitPrice,
+            'line_total' => $quantity * $unitPrice,
         ]);
     }
 
@@ -54,7 +54,7 @@ class ReservationItemFactory extends Factory
             
             return [
                 'quantity' => $quantity,
-                'subtotal' => $quantity * $unitPrice,
+                'line_total' => $quantity * $unitPrice,
             ];
         });
     }
@@ -70,7 +70,7 @@ class ReservationItemFactory extends Factory
             
             return [
                 'quantity' => $quantity,
-                'subtotal' => $quantity * $unitPrice,
+                'line_total' => $quantity * $unitPrice,
             ];
         });
     }

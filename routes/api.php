@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BatchController;
+use App\Http\Controllers\Api\BulkOperationsController;
 use App\Http\Controllers\Api\DailyCollectionController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DeliveryController;
@@ -29,16 +30,36 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Public routes
-Route::post('/login', [AuthController::class, 'login'])->name('login');
-Route::post('/register', [AuthController::class, 'register'])->name('register');
+// API Version 1
+Route::prefix('v1')->group(function () {
+    // Public routes with auth rate limiting
+    Route::middleware('throttle:auth')->group(function () {
+        Route::post('/login', [AuthController::class, 'login'])->name('login');
+        Route::post('/register', [AuthController::class, 'register'])->name('register');
+    });
 
-// Protected routes
-Route::middleware('auth:sanctum')->group(function () {
+    // Password Reset (public, strict rate limiting)
+    Route::middleware('throttle:password-reset')->group(function () {
+        Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.email');
+        Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
+    });
+
+    // Email Verification (signed URL - no auth required for clicking link)
+    Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
+        ->middleware('signed')
+        ->name('verification.verify');
+
+    // Protected routes with general API rate limiting
+    Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Auth
     Route::get('/user', [AuthController::class, 'user'])->name('user');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::post('/logout-all', [AuthController::class, 'logoutAll'])->name('logout.all');
+
+    // Email Verification (resend - requires auth)
+    Route::post('/email/verification-notification', [AuthController::class, 'sendVerificationEmail'])
+        ->middleware('throttle:6,1')
+        ->name('verification.send');
 
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -71,6 +92,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('batches', BatchController::class)->except(['destroy']);
     Route::post('/batches/{batch}/expire', [BatchController::class, 'expire'])
         ->name('batches.expire');
+
+    // ==================== BULK OPERATIONS ====================
+    Route::prefix('bulk')->name('bulk.')->middleware('throttle:bulk')->group(function () {
+        Route::post('/batches/expire', [BulkOperationsController::class, 'expireBatches'])
+            ->name('batches.expire');
+        Route::post('/delete', [BulkOperationsController::class, 'bulkDelete'])
+            ->name('delete');
+        Route::post('/inventory/adjust', [BulkOperationsController::class, 'bulkAdjustInventory'])
+            ->name('inventory.adjust');
+        Route::post('/reservations/status', [BulkOperationsController::class, 'bulkUpdateReservationStatus'])
+            ->name('reservations.status');
+    });
 
     // Daily Collections
     Route::get('/collections/summary', [DailyCollectionController::class, 'summary'])
@@ -137,14 +170,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/reservations/{reservation}/cancel', [ReservationController::class, 'cancel'])
         ->name('reservations.cancel');
 
-    // Sales
-    Route::get('/sales/today-summary', [SaleController::class, 'todaySummary'])
-        ->name('sales.today-summary');
-    Route::apiResource('sales', SaleController::class)->only(['index', 'show', 'store']);
-    Route::post('/sales/{sale}/void', [SaleController::class, 'void'])
-        ->name('sales.void');
-    Route::get('/sales/{sale}/receipt', [SaleController::class, 'receipt'])
-        ->name('sales.receipt');
+    // Sales (higher rate limit for POS operations)
+    Route::middleware('throttle:sales')->group(function () {
+        Route::get('/sales/today-summary', [SaleController::class, 'todaySummary'])
+            ->name('sales.today-summary');
+        Route::apiResource('sales', SaleController::class)->only(['index', 'show', 'store']);
+        Route::post('/sales/{sale}/void', [SaleController::class, 'void'])
+            ->name('sales.void');
+        Route::get('/sales/{sale}/receipt', [SaleController::class, 'receipt'])
+            ->name('sales.receipt');
+    });
 
     // ==================== REPORTS ====================
     Route::prefix('reports')->name('reports.')->group(function () {
@@ -187,3 +222,4 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/download/manifest/{delivery}', [ReportController::class, 'downloadDeliveryManifest'])->name('download.manifest');
     });
 });
+}); // End of v1 prefix

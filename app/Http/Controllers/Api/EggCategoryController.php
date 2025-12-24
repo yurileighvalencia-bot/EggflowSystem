@@ -5,12 +5,18 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreEggCategoryRequest;
 use App\Http\Requests\UpdateEggCategoryRequest;
+use App\Http\Resources\EggCategoryResource;
 use App\Models\EggCategory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class EggCategoryController extends Controller
 {
+    public function __construct()
+    {
+        $this->authorizeResource(EggCategory::class, 'category');
+    }
+
     /**
      * Display a listing of egg categories.
      */
@@ -22,9 +28,14 @@ class EggCategoryController extends Controller
             $query->where('is_active', true);
         }
 
-        $categories = $query->orderBy('name')->get();
+        $query->withCount('batches')->orderBy('sort_order')->orderBy('name');
 
-        return response()->json(['data' => $categories]);
+        // Support ?all=true for dropdowns, otherwise paginate
+        if ($request->boolean('all')) {
+            return response()->json(['data' => EggCategoryResource::collection($query->get())]);
+        }
+
+        return EggCategoryResource::collection($query->paginate($request->integer('per_page', 15)))->response();
     }
 
     /**
@@ -36,7 +47,7 @@ class EggCategoryController extends Controller
 
         return response()->json([
             'message' => 'Egg category created successfully.',
-            'data' => $category,
+            'data' => new EggCategoryResource($category),
         ], 201);
     }
 
@@ -45,7 +56,9 @@ class EggCategoryController extends Controller
      */
     public function show(EggCategory $category): JsonResponse
     {
-        return response()->json(['data' => $category]);
+        $category->loadCount('batches');
+
+        return response()->json(['data' => new EggCategoryResource($category)]);
     }
 
     /**
@@ -57,7 +70,7 @@ class EggCategoryController extends Controller
 
         return response()->json([
             'message' => 'Egg category updated successfully.',
-            'data' => $category->fresh(),
+            'data' => new EggCategoryResource($category->fresh()),
         ]);
     }
 
@@ -66,11 +79,13 @@ class EggCategoryController extends Controller
      */
     public function toggleActive(EggCategory $category): JsonResponse
     {
+        $this->authorize('update', $category);
+
         $category->update(['is_active' => !$category->is_active]);
 
         return response()->json([
             'message' => 'Category status updated.',
-            'data' => $category->fresh(),
+            'data' => new EggCategoryResource($category->fresh()),
         ]);
     }
 }

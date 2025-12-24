@@ -23,7 +23,6 @@ class ReservationFactory extends Factory
             'shop_id' => Shop::factory(),
             'customer_id' => User::factory(),
             'status' => Reservation::STATUS_PENDING,
-            'reserved_at' => now(),
             'pickup_date' => now()->addDays(fake()->numberBetween(1, 3))->toDateString(),
             'expires_at' => now()->addDays(3),
         ];

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreDeliveryRequest;
 use App\Http\Requests\DispatchDeliveryRequest;
 use App\Http\Requests\ReceiveDeliveryRequest;
+use App\Http\Resources\DeliveryResource;
 use App\Models\Delivery;
 use App\Models\DeliveryItem;
 use App\Models\DeliveryDiscrepancy;
@@ -58,7 +59,7 @@ class DeliveryController extends Controller
         $deliveries = $query->orderByDesc('created_at')
             ->paginate($request->get('per_page', 15));
 
-        return response()->json($deliveries);
+        return DeliveryResource::collection($deliveries)->response();
     }
 
     /**
@@ -95,7 +96,7 @@ class DeliveryController extends Controller
 
             return response()->json([
                 'message' => 'Delivery created and dispatched successfully.',
-                'data' => $delivery->load(['items', 'restockRequest']),
+                'data' => new DeliveryResource($delivery->load(['items', 'restockRequest'])),
             ], 201);
         });
     }
@@ -107,18 +108,18 @@ class DeliveryController extends Controller
     {
         $this->authorize('view', $delivery);
 
-        return response()->json([
-            'data' => $delivery->load([
-                'restockRequest.shop',
-                'restockRequest.eggCategory',
-                'items.batch',
-                'items.eggCategory',
-                'discrepancies',
-                'wastageLogs',
-                'dispatcher',
-                'receiver',
-            ]),
+        $delivery->load([
+            'restockRequest.shop',
+            'restockRequest.eggCategory',
+            'items.batch',
+            'items.eggCategory',
+            'discrepancies',
+            'wastageLogs',
+            'dispatcher',
+            'receiver',
         ]);
+
+        return response()->json(['data' => new DeliveryResource($delivery)]);
     }
 
     /**
@@ -199,7 +200,7 @@ class DeliveryController extends Controller
 
             return response()->json([
                 'message' => 'Delivery received and processed successfully.',
-                'data' => $delivery->fresh(['items', 'discrepancies', 'wastageLogs']),
+                'data' => new DeliveryResource($delivery->fresh(['items', 'discrepancies', 'wastageLogs'])),
                 'summary' => [
                     'total_received' => $totalReceived,
                     'total_rejected' => $totalRejected,
@@ -226,7 +227,7 @@ class DeliveryController extends Controller
         $deliveries = $query->orderBy('dispatched_at')->get();
 
         return response()->json([
-            'data' => $deliveries,
+            'data' => DeliveryResource::collection($deliveries),
             'count' => $deliveries->count(),
         ]);
     }

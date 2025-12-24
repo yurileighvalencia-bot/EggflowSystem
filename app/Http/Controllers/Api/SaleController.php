@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSaleRequest;
+use App\Http\Resources\SaleResource;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Reservation;
@@ -56,7 +57,7 @@ class SaleController extends Controller
         $sales = $query->orderByDesc('sold_at')
             ->paginate($request->get('per_page', 15));
 
-        return response()->json($sales);
+        return SaleResource::collection($sales)->response();
     }
 
     /**
@@ -122,7 +123,7 @@ class SaleController extends Controller
 
             return response()->json([
                 'message' => 'Sale completed successfully.',
-                'data' => $sale->load(['shop', 'customer', 'staff', 'items.eggCategory', 'items.batch']),
+                'data' => new SaleResource($sale->load(['shop', 'customer', 'staff', 'items.eggCategory', 'items.batch'])),
             ], 201);
         });
     }
@@ -136,7 +137,7 @@ class SaleController extends Controller
 
         if (!$reservation->isActive()) {
             return response()->json([
-                'error' => 'This reservation cannot be fulfilled.',
+                'message' => 'This reservation cannot be fulfilled.',
             ], 422);
         }
 
@@ -178,7 +179,7 @@ class SaleController extends Controller
 
         return response()->json([
             'message' => 'Reservation fulfilled successfully.',
-            'data' => $sale->load(['shop', 'customer', 'staff', 'items.eggCategory', 'reservation']),
+            'data' => new SaleResource($sale->load(['shop', 'customer', 'staff', 'items.eggCategory', 'reservation'])),
         ], 201);
     }
 
@@ -189,16 +190,16 @@ class SaleController extends Controller
     {
         $this->authorize('view', $sale);
 
-        return response()->json([
-            'data' => $sale->load([
-                'shop',
-                'customer',
-                'staff',
-                'reservation',
-                'items.eggCategory',
-                'items.batch',
-            ]),
+        $sale->load([
+            'shop',
+            'customer',
+            'staff',
+            'reservation',
+            'items.eggCategory',
+            'items.batch',
         ]);
+
+        return response()->json(['data' => new SaleResource($sale)]);
     }
 
     /**
@@ -221,7 +222,7 @@ class SaleController extends Controller
 
         return response()->json([
             'message' => 'Sale voided successfully.',
-            'data' => $sale->fresh(),
+            'data' => new SaleResource($sale->fresh()),
         ]);
     }
 
@@ -264,9 +265,11 @@ class SaleController extends Controller
     {
         $this->authorize('view', $sale);
 
+        $sale->load(['shop', 'customer', 'staff', 'items.eggCategory']);
+
         return response()->json([
             'data' => [
-                'sale' => $sale->load(['shop', 'customer', 'staff', 'items.eggCategory']),
+                'sale' => new SaleResource($sale),
                 'receipt_number' => $sale->sale_code,
                 'generated_at' => now()->toIso8601String(),
             ],

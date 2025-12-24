@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreBatchRequest;
+use App\Http\Requests\UpdateBatchRequest;
+use App\Http\Resources\BatchResource;
 use App\Models\Batch;
 use App\Models\EggCategory;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BatchController extends Controller
 {
@@ -51,7 +54,7 @@ class BatchController extends Controller
         $batches = $query->orderByDesc('collection_date')
             ->paginate($request->get('per_page', 15));
 
-        return response()->json($batches);
+        return BatchResource::collection($batches)->response();
     }
 
     /**
@@ -59,29 +62,31 @@ class BatchController extends Controller
      */
     public function store(StoreBatchRequest $request): JsonResponse
     {
-        $categories = EggCategory::where('is_active', true)->get();
+        return DB::transaction(function () use ($request) {
+            $categories = EggCategory::where('is_active', true)->get();
 
-        $createdBatches = [];
+            $createdBatches = [];
 
-        foreach ($categories as $category) {
-            $batch = Batch::create([
-                'farm_id' => $request->farm_id,
-                'egg_category_id' => $category->id,
-                'collection_date' => $request->collection_date,
-                'expires_at' => $request->expires_at,
-                'initial_quantity' => 0,
-                'current_quantity' => 0,
-                'status' => 'active',
-                'notes' => $request->notes,
-            ]);
+            foreach ($categories as $category) {
+                $batch = Batch::create([
+                    'farm_id' => $request->farm_id,
+                    'egg_category_id' => $category->id,
+                    'collection_date' => $request->collection_date,
+                    'expires_at' => $request->expires_at,
+                    'initial_quantity' => 0,
+                    'current_quantity' => 0,
+                    'status' => 'active',
+                    'notes' => $request->notes,
+                ]);
 
-            $createdBatches[] = $batch->load(['farm', 'eggCategory']);
-        }
+                $createdBatches[] = $batch->load(['farm', 'eggCategory']);
+            }
 
-        return response()->json([
-            'message' => 'Batches created successfully for all active egg categories.',
-            'data' => $createdBatches,
-        ], 201);
+            return response()->json([
+                'message' => 'Batches created successfully for all active egg categories.',
+                'data' => BatchResource::collection($createdBatches),
+            ], 201);
+        });
     }
 
     /**
@@ -91,33 +96,26 @@ class BatchController extends Controller
     {
         $this->authorize('view', $batch);
 
-        return response()->json([
-            'data' => $batch->load([
-                'farm',
-                'eggCategory',
-                'dailyCollections.staff',
-                'inventories.shop',
-            ]),
+        $batch->load([
+            'farm',
+            'eggCategory',
+            'dailyCollections.staff',
+            'inventories.shop',
         ]);
+
+        return response()->json(['data' => new BatchResource($batch)]);
     }
 
     /**
      * Update the specified batch.
      */
-    public function update(Request $request, Batch $batch): JsonResponse
+    public function update(UpdateBatchRequest $request, Batch $batch): JsonResponse
     {
-        $this->authorize('update', $batch);
-
-        $validated = $request->validate([
-            'expires_at' => ['nullable', 'date', 'after:collection_date'],
-            'notes' => ['nullable', 'string', 'max:500'],
-        ]);
-
-        $batch->update($validated);
+        $batch->update($request->validated());
 
         return response()->json([
             'message' => 'Batch updated successfully.',
-            'data' => $batch->fresh(['farm', 'eggCategory']),
+            'data' => new BatchResource($batch->fresh(['farm', 'eggCategory'])),
         ]);
     }
 
@@ -128,17 +126,21 @@ class BatchController extends Controller
     {
         $this->authorize('expire', $batch);
 
-        $batch->update(['status' => 'expired']);
+        return DB::transaction(function () use ($request, $batch) {
+            $wastedQuantity = $batch->current_quantity;
+            
+            $batch->update(['status' => 'expired']);
 
-        // Log wastage for remaining quantity
-        if ($batch->current_quantity > 0) {
-            event(new \App\Events\BatchExpired($batch, $request->user()));
-        }
+            // Fire event for notifications (wastage is handled by CheckBatchExpiry command)
+            if ($wastedQuantity > 0) {
+                event(new \App\Events\BatchExpired($batch, $wastedQuantity, $request->user()));
+            }
 
-        return response()->json([
-            'message' => 'Batch marked as expired.',
-            'data' => $batch->fresh(),
-        ]);
+            return response()->json([
+                'message' => 'Batch marked as expired.',
+                'data' => new BatchResource($batch->fresh()),
+            ]);
+        });
     }
 
     /**
@@ -162,7 +164,7 @@ class BatchController extends Controller
         $batches = $query->orderBy('expires_at')->get();
 
         return response()->json([
-            'data' => $batches,
+            'data' => BatchResource::collection($batches),
             'total_expiring_quantity' => $batches->sum('current_quantity'),
         ]);
     }

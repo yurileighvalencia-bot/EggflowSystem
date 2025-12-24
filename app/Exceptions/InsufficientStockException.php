@@ -3,6 +3,8 @@
 namespace App\Exceptions;
 
 use Exception;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class InsufficientStockException extends Exception
 {
@@ -40,5 +42,21 @@ class InsufficientStockException extends Exception
     public function getShortfall(): int
     {
         return max(0, $this->requestedQuantity - $this->availableQuantity);
+    }
+
+    /**
+     * Render the exception as an HTTP response.
+     */
+    public function render(Request $request): JsonResponse
+    {
+        return response()->json([
+            'message' => $this->getMessage(),
+            'errors' => [
+                'stock' => [$this->getMessage()],
+            ],
+            'category_id' => $this->categoryId,
+            'requested' => $this->requestedQuantity,
+            'available' => $this->availableQuantity,
+        ], 422);
     }
 }

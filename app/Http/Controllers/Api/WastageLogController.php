@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreWastageLogRequest;
+use App\Http\Resources\WastageLogResource;
 use App\Models\WastageLog;
 use App\Services\InventoryService;
 use Illuminate\Http\JsonResponse;
@@ -52,7 +53,7 @@ class WastageLogController extends Controller
         $logs = $query->orderByDesc('logged_at')
             ->paginate($request->get('per_page', 15));
 
-        return response()->json($logs);
+        return WastageLogResource::collection($logs)->response();
     }
 
     /**
@@ -73,7 +74,7 @@ class WastageLogController extends Controller
 
         return response()->json([
             'message' => 'Wastage logged successfully.',
-            'data' => $log->load(['shop', 'batch', 'eggCategory', 'logger']),
+            'data' => new WastageLogResource($log->load(['shop', 'batch', 'eggCategory', 'logger'])),
         ], 201);
     }
 
@@ -84,15 +85,15 @@ class WastageLogController extends Controller
     {
         $this->authorize('view', $wastageLog);
 
-        return response()->json([
-            'data' => $wastageLog->load([
-                'shop',
-                'batch',
-                'delivery',
-                'eggCategory',
-                'logger',
-            ]),
+        $wastageLog->load([
+            'shop',
+            'batch',
+            'delivery',
+            'eggCategory',
+            'logger',
         ]);
+
+        return response()->json(['data' => new WastageLogResource($wastageLog)]);
     }
 
     /**

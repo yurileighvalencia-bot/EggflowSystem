@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreReservationRequest;
 use App\Http\Requests\UpdateReservationRequest;
+use App\Http\Resources\ReservationResource;
 use App\Models\Reservation;
 use App\Models\ReservationItem;
 use App\Services\InventoryService;
@@ -56,7 +57,7 @@ class ReservationController extends Controller
         $reservations = $query->orderByDesc('created_at')
             ->paginate($request->get('per_page', 15));
 
-        return response()->json($reservations);
+        return ReservationResource::collection($reservations)->response();
     }
 
     /**
@@ -97,7 +98,7 @@ class ReservationController extends Controller
 
             return response()->json([
                 'message' => 'Reservation created successfully.',
-                'data' => $reservation->load(['shop', 'items.eggCategory']),
+                'data' => new ReservationResource($reservation->load(['shop', 'items.eggCategory'])),
             ], 201);
         });
     }
@@ -109,15 +110,15 @@ class ReservationController extends Controller
     {
         $this->authorize('view', $reservation);
 
-        return response()->json([
-            'data' => $reservation->load([
-                'shop',
-                'customer',
-                'items.eggCategory',
-                'items.batch',
-                'sale',
-            ]),
+        $reservation->load([
+            'shop',
+            'customer',
+            'items.eggCategory',
+            'items.batch',
+            'sale',
         ]);
+
+        return response()->json(['data' => new ReservationResource($reservation)]);
     }
 
     /**
@@ -165,7 +166,7 @@ class ReservationController extends Controller
 
             return response()->json([
                 'message' => 'Reservation updated successfully.',
-                'data' => $reservation->fresh(['shop', 'items.eggCategory']),
+                'data' => new ReservationResource($reservation->fresh(['shop', 'items.eggCategory'])),
             ]);
         });
     }
@@ -181,7 +182,7 @@ class ReservationController extends Controller
 
         return response()->json([
             'message' => 'Reservation confirmed successfully.',
-            'data' => $reservation->fresh(),
+            'data' => new ReservationResource($reservation->fresh()),
         ]);
     }
 
@@ -196,7 +197,7 @@ class ReservationController extends Controller
 
         return response()->json([
             'message' => 'Reservation marked as ready for pickup.',
-            'data' => $reservation->fresh(),
+            'data' => new ReservationResource($reservation->fresh()),
         ]);
     }
 
@@ -223,7 +224,7 @@ class ReservationController extends Controller
 
             return response()->json([
                 'message' => 'Reservation cancelled successfully.',
-                'data' => $reservation->fresh(),
+                'data' => new ReservationResource($reservation->fresh()),
             ]);
         });
     }
@@ -249,7 +250,7 @@ class ReservationController extends Controller
         $reservations = $query->orderBy('pickup_time')->get();
 
         return response()->json([
-            'data' => $reservations,
+            'data' => ReservationResource::collection($reservations),
             'count' => $reservations->count(),
         ]);
     }

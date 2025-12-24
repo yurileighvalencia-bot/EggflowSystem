@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use OwenIt\Auditing\Contracts\Auditable;
 
 class DeliveryDiscrepancy extends Model implements Auditable
 {
+    use HasFactory, SoftDeletes;
     use \OwenIt\Auditing\Auditable;
 
     const RESOLUTION_APPROVED = 'approved';
@@ -38,6 +41,17 @@ class DeliveryDiscrepancy extends Model implements Auditable
         'reported_at' => 'datetime',
         'investigated_at' => 'datetime',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($discrepancy) {
+            if (empty($discrepancy->reported_at)) {
+                $discrepancy->reported_at = now();
+            }
+        });
+    }
 
     /**
      * Get the delivery this discrepancy belongs to.

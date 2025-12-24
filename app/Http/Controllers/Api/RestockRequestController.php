@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreRestockRequestRequest;
 use App\Http\Requests\AcknowledgeRestockRequest;
+use App\Http\Resources\RestockRequestResource;
 use App\Models\RestockRequest;
 use App\Events\RestockRequestCreated;
 use App\Events\RestockRequestAcknowledged;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class RestockRequestController extends Controller
 {
@@ -47,7 +49,7 @@ class RestockRequestController extends Controller
         $requests = $query->orderByDesc('created_at')
             ->paginate($request->get('per_page', 15));
 
-        return response()->json($requests);
+        return RestockRequestResource::collection($requests)->response();
     }
 
     /**
@@ -58,26 +60,28 @@ class RestockRequestController extends Controller
         // Check for existing active request
         if (RestockRequest::hasActiveRequest($request->shop_id, $request->egg_category_id)) {
             return response()->json([
-                'error' => 'An active restock request already exists for this category.',
+                'message' => 'An active restock request already exists for this category.',
             ], 422);
         }
 
-        $restockRequest = RestockRequest::create([
-            'shop_id' => $request->shop_id,
-            'egg_category_id' => $request->egg_category_id,
-            'quantity_requested' => $request->quantity_requested,
-            'quantity_remaining' => $request->quantity_requested,
-            'status' => RestockRequest::STATUS_PENDING,
-            'requested_by' => $request->user()->id,
-            'notes' => $request->notes,
-        ]);
+        return DB::transaction(function () use ($request) {
+            $restockRequest = RestockRequest::create([
+                'shop_id' => $request->shop_id,
+                'egg_category_id' => $request->egg_category_id,
+                'quantity_requested' => $request->quantity_requested,
+                'quantity_remaining' => $request->quantity_requested,
+                'status' => RestockRequest::STATUS_PENDING,
+                'requested_by' => $request->user()->id,
+                'notes' => $request->notes,
+            ]);
 
-        event(new RestockRequestCreated($restockRequest));
+            event(new RestockRequestCreated($restockRequest));
 
-        return response()->json([
-            'message' => 'Restock request created successfully.',
-            'data' => $restockRequest->load(['shop', 'eggCategory']),
-        ], 201);
+            return response()->json([
+                'message' => 'Restock request created successfully.',
+                'data' => new RestockRequestResource($restockRequest->load(['shop', 'eggCategory'])),
+            ], 201);
+        });
     }
 
     /**
@@ -87,15 +91,15 @@ class RestockRequestController extends Controller
     {
         $this->authorize('view', $restockRequest);
 
-        return response()->json([
-            'data' => $restockRequest->load([
-                'shop',
-                'eggCategory',
-                'requester',
-                'acknowledger',
-                'deliveries.items',
-            ]),
+        $restockRequest->load([
+            'shop',
+            'eggCategory',
+            'requester',
+            'acknowledger',
+            'deliveries.items',
         ]);
+
+        return response()->json(['data' => new RestockRequestResource($restockRequest)]);
     }
 
     /**
@@ -115,7 +119,7 @@ class RestockRequestController extends Controller
 
         return response()->json([
             'message' => 'Restock request acknowledged successfully.',
-            'data' => $restockRequest->fresh(['shop', 'eggCategory', 'acknowledger']),
+            'data' => new RestockRequestResource($restockRequest->fresh(['shop', 'eggCategory', 'acknowledger'])),
         ]);
     }
 
@@ -137,7 +141,7 @@ class RestockRequestController extends Controller
 
         return response()->json([
             'message' => 'Restock request cancelled successfully.',
-            'data' => $restockRequest->fresh(),
+            'data' => new RestockRequestResource($restockRequest->fresh()),
         ]);
     }
 

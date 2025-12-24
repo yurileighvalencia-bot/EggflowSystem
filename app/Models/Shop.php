@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use OwenIt\Auditing\Contracts\Auditable;
 
 class Shop extends Model implements Auditable
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
     use \OwenIt\Auditing\Auditable;
 
     protected $fillable = [
@@ -21,10 +22,12 @@ class Shop extends Model implements Auditable
         'contact_phone',
         'contact_email',
         'is_active',
+        'default_tax_rate',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'default_tax_rate' => 'decimal:4',
     ];
 
     /**

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Delivery;
 use App\Models\DeliveryDiscrepancy;
 use App\Models\DeliveryItem;
 use App\Models\User;
@@ -21,13 +22,16 @@ class DeliveryDiscrepancyFactory extends Factory
     {
         $qtySent = fake()->numberBetween(50, 200);
         $qtyReceived = fake()->numberBetween(30, $qtySent - 5);
+        $qtyRejected = fake()->numberBetween(0, 5);
         
         return [
+            'delivery_id' => Delivery::factory(),
             'delivery_item_id' => DeliveryItem::factory(),
             'qty_sent' => $qtySent,
             'qty_received' => $qtyReceived,
+            'qty_rejected' => $qtyRejected,
             'qty_missing' => $qtySent - $qtyReceived,
-            'reason' => fake()->randomElement([
+            'notes' => fake()->optional(0.5)->randomElement([
                 'Broken eggs during transport',
                 'Miscounted at farm',
                 'Partial theft suspected',
@@ -35,11 +39,8 @@ class DeliveryDiscrepancyFactory extends Factory
                 'Temperature damage',
             ]),
             'reported_by' => User::factory(),
-            'reported_at' => now(),
-            'status' => DeliveryDiscrepancy::STATUS_REPORTED,
             'investigated_by' => null,
             'investigated_at' => null,
-            'investigation_notes' => null,
             'resolution' => null,
         ];
     }
@@ -50,7 +51,6 @@ class DeliveryDiscrepancyFactory extends Factory
     public function investigating(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => DeliveryDiscrepancy::STATUS_INVESTIGATING,
             'investigated_by' => User::factory(),
             'investigated_at' => now(),
         ]);
@@ -62,15 +62,14 @@ class DeliveryDiscrepancyFactory extends Factory
     public function resolved(string $resolution = null): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => DeliveryDiscrepancy::STATUS_RESOLVED,
             'investigated_by' => User::factory(),
             'investigated_at' => now()->subHours(2),
-            'investigation_notes' => fake()->paragraph(),
+            'notes' => fake()->paragraph(),
             'resolution' => $resolution ?? fake()->randomElement([
-                'Eggs confirmed broken - farm credited',
-                'Miscount verified - inventory adjusted',
-                'Driver error - retraining scheduled',
-                'No further action required',
+                DeliveryDiscrepancy::RESOLUTION_APPROVED,
+                DeliveryDiscrepancy::RESOLUTION_REJECTED,
+                DeliveryDiscrepancy::RESOLUTION_PARTIAL_LOSS,
+                DeliveryDiscrepancy::RESOLUTION_OTHER,
             ]),
         ]);
     }

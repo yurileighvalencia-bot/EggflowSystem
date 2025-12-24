@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Dyrynda\Database\Support\CascadeSoftDeletes;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,8 +12,13 @@ use OwenIt\Auditing\Contracts\Auditable;
 
 class Sale extends Model implements Auditable
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes, CascadeSoftDeletes;
     use \OwenIt\Auditing\Auditable;
+
+    /**
+     * Relationships to cascade soft deletes.
+     */
+    protected array $cascadeDeletes = ['items'];
 
     const STATUS_COMPLETED = 'completed';
     const STATUS_VOIDED = 'voided';
@@ -119,7 +126,30 @@ class Sale extends Model implements Auditable
     public function calculateTotals(): void
     {
         $this->subtotal = $this->items->sum('line_total');
+        $this->tax = $this->calculateTax();
         $this->total = $this->subtotal + $this->tax - $this->discount;
+    }
+
+    /**
+     * Calculate tax based on shop rate and category exemptions.
+     * Philippine TRAIN Law: Agricultural products are VAT-exempt.
+     */
+    protected function calculateTax(): float
+    {
+        $shop = $this->shop;
+        if (!$shop || $shop->default_tax_rate <= 0) {
+            return 0;
+        }
+
+        $taxableTotal = 0;
+        foreach ($this->items as $item) {
+            $category = $item->eggCategory;
+            if ($category && !$category->is_tax_exempt) {
+                $taxableTotal += $item->line_total;
+            }
+        }
+
+        return round($taxableTotal * $shop->default_tax_rate, 2);
     }
 
     public function scopeCompleted($query)

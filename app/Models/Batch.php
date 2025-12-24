@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +12,7 @@ use Carbon\Carbon;
 
 class Batch extends Model implements Auditable
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
     use \OwenIt\Auditing\Auditable;
 
     protected $fillable = [
@@ -24,6 +25,7 @@ class Batch extends Model implements Auditable
         'current_quantity',
         'status',
         'notes',
+        'created_by',
     ];
 
     protected $casts = [
@@ -77,6 +79,14 @@ class Batch extends Model implements Auditable
     public function farm(): BelongsTo
     {
         return $this->belongsTo(Farm::class);
+    }
+
+    /**
+     * Get the user who created this batch.
+     */
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     /**

@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreShopRequest;
+use App\Http\Requests\UpdateShopRequest;
+use App\Http\Resources\ShopResource;
 use App\Models\Shop;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,33 +17,34 @@ class ShopController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Shop::with('farm');
+        $this->authorize('viewAny', Shop::class);
+
+        $query = Shop::with('farm')->withCount(['users', 'inventories']);
 
         if ($request->has('farm_id')) {
             $query->where('farm_id', $request->farm_id);
         }
 
-        $shops = $query->orderBy('name')->get();
+        $query->orderBy('name');
 
-        return response()->json(['data' => $shops]);
+        // Support ?all=true for dropdowns, otherwise paginate
+        if ($request->boolean('all')) {
+            return response()->json(['data' => ShopResource::collection($query->get())]);
+        }
+
+        return ShopResource::collection($query->paginate($request->integer('per_page', 15)))->response();
     }
 
     /**
      * Store a newly created shop.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreShopRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'farm_id' => ['nullable', 'exists:farms,id'],
-            'name' => ['required', 'string', 'max:100'],
-            'address' => ['nullable', 'string', 'max:500'],
-        ]);
-
-        $shop = Shop::create($validated);
+        $shop = Shop::create($request->validated());
 
         return response()->json([
             'message' => 'Shop created successfully.',
-            'data' => $shop->load('farm'),
+            'data' => new ShopResource($shop->load('farm')),
         ], 201);
     }
 
@@ -49,27 +53,24 @@ class ShopController extends Controller
      */
     public function show(Shop $shop): JsonResponse
     {
-        return response()->json([
-            'data' => $shop->load(['farm', 'users']),
-        ]);
+        $this->authorize('view', $shop);
+
+        $shop->load(['farm', 'users']);
+        $shop->loadCount(['users', 'inventories']);
+
+        return response()->json(['data' => new ShopResource($shop)]);
     }
 
     /**
      * Update the specified shop.
      */
-    public function update(Request $request, Shop $shop): JsonResponse
+    public function update(UpdateShopRequest $request, Shop $shop): JsonResponse
     {
-        $validated = $request->validate([
-            'farm_id' => ['nullable', 'exists:farms,id'],
-            'name' => ['sometimes', 'string', 'max:100'],
-            'address' => ['nullable', 'string', 'max:500'],
-        ]);
-
-        $shop->update($validated);
+        $shop->update($request->validated());
 
         return response()->json([
             'message' => 'Shop updated successfully.',
-            'data' => $shop->fresh(['farm']),
+            'data' => new ShopResource($shop->fresh(['farm'])),
         ]);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,7 +10,7 @@ use OwenIt\Auditing\Contracts\Auditable;
 
 class EggCategory extends Model implements Auditable
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
     use \OwenIt\Auditing\Auditable;
 
     protected $fillable = [
@@ -21,6 +22,7 @@ class EggCategory extends Model implements Auditable
         'default_price',
         'sort_order',
         'is_active',
+        'is_tax_exempt',
     ];
 
     protected $casts = [
@@ -29,6 +31,7 @@ class EggCategory extends Model implements Auditable
         'default_price' => 'decimal:2',
         'sort_order' => 'integer',
         'is_active' => 'boolean',
+        'is_tax_exempt' => 'boolean',
     ];
 
     /**

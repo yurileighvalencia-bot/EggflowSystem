@@ -23,10 +23,11 @@ class DailyCollectionFactory extends Factory
         return [
             'farm_id' => Farm::factory(),
             'egg_category_id' => EggCategory::factory(),
+            'batch_id' => null,
             'collection_date' => fake()->dateTimeBetween('-30 days', 'now')->format('Y-m-d'),
             'quantity' => fake()->numberBetween(50, 500),
             'notes' => fake()->optional(0.3)->sentence(),
-            'collected_by' => User::factory(),
+            'staff_id' => User::factory(),
         ];
     }
 

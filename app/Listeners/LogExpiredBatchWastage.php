@@ -3,11 +3,18 @@
 namespace App\Listeners;
 
 use App\Events\BatchExpired;
-use App\Models\WastageLog;
-use App\Models\Inventory;
+use App\Models\User;
+use App\Notifications\BatchExpiredNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
+/**
+ * Handles notifications when a batch expires.
+ * 
+ * NOTE: Wastage logging is handled by CheckBatchExpiry command (the authoritative source).
+ * This listener is purely for notifications to managers/staff.
+ */
 class LogExpiredBatchWastage implements ShouldQueue
 {
     /**
@@ -16,49 +23,20 @@ class LogExpiredBatchWastage implements ShouldQueue
     public function handle(BatchExpired $event): void
     {
         $batch = $event->batch;
+        $wastedQuantity = $event->quantity;
 
-        if ($batch->current_quantity <= 0) {
-            return;
-        }
-
-        $loggedById = $event->expiredBy?->id;
-
-        // Log wastage for remaining quantity in the batch
-        WastageLog::create([
-            'shop_id' => null, // Batch expired at farm level
-            'batch_id' => $batch->id,
-            'delivery_id' => null,
-            'egg_category_id' => $batch->egg_category_id,
-            'quantity' => $batch->current_quantity,
-            'source' => WastageLog::SOURCE_BATCH_EXPIRED,
-            'reason' => "Batch {$batch->batch_code} expired on {$batch->expires_at->format('Y-m-d')}",
-            'logged_by' => $loggedById,
-            'logged_at' => now(),
-        ]);
-
-        // Also log wastage for each shop's inventory of this batch
-        $inventories = Inventory::where('batch_id', $batch->id)
-            ->where('available_stock', '>', 0)
+        // Notify farm managers about the expired batch
+        $managers = User::role('manager')
+            ->where(function ($query) use ($batch) {
+                $query->whereNull('farm_id')
+                    ->orWhere('farm_id', $batch->farm_id);
+            })
             ->get();
 
-        foreach ($inventories as $inventory) {
-            WastageLog::create([
-                'shop_id' => $inventory->shop_id,
-                'batch_id' => $batch->id,
-                'delivery_id' => null,
-                'egg_category_id' => $batch->egg_category_id,
-                'quantity' => $inventory->available_stock,
-                'source' => WastageLog::SOURCE_BATCH_EXPIRED,
-                'reason' => "Batch {$batch->batch_code} expired - inventory cleared",
-                'logged_by' => $loggedById,
-                'logged_at' => now(),
-            ]);
-
-            // Clear the inventory
-            $inventory->available_stock = 0;
-            $inventory->save();
+        if ($managers->isNotEmpty()) {
+            Notification::send($managers, new BatchExpiredNotification($batch, $wastedQuantity));
         }
 
-        Log::info("Batch {$batch->batch_code} expired. Wastage logged for {$batch->current_quantity} eggs.");
+        Log::info("BatchExpired notification sent for batch {$batch->batch_code} ({$wastedQuantity} eggs wasted).");
     }
 }

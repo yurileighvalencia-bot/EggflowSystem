@@ -17,10 +17,12 @@ use App\Events\SaleCompleted;
 use App\Listeners\CheckStockAfterSale;
 use App\Listeners\HandleLowStockAlert;
 use App\Listeners\LogExpiredBatchWastage;
+use App\Listeners\NotifyCustomerOfCancelledReservation;
 use App\Listeners\NotifyCustomerOfExpiredReservation;
 use App\Listeners\NotifyFarmOfDeliveryReceipt;
 use App\Listeners\NotifyFarmStaffOfRestockRequest;
 use App\Listeners\NotifyManagersOfDiscrepancy;
+use App\Listeners\NotifyReporterOfResolution;
 use App\Listeners\NotifyShopOfAcknowledgement;
 use App\Listeners\NotifyShopOfDeliveryDispatch;
 use App\Listeners\SendReservationConfirmation;
@@ -63,10 +65,16 @@ class EventServiceProvider extends ServiceProvider
         DeliveryDiscrepancyReported::class => [
             NotifyManagersOfDiscrepancy::class,
         ],
+        DiscrepancyInvestigated::class => [
+            NotifyReporterOfResolution::class,
+        ],
 
         // Reservation Events
         ReservationCreated::class => [
             SendReservationConfirmation::class,
+        ],
+        ReservationCancelled::class => [
+            NotifyCustomerOfCancelledReservation::class,
         ],
         ReservationExpired::class => [
             NotifyCustomerOfExpiredReservation::class,

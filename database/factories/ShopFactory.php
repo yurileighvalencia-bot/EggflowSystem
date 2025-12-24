@@ -22,6 +22,10 @@ class ShopFactory extends Factory
             'farm_id' => Farm::factory(),
             'name' => fake()->company() . ' Egg Shop',
             'address' => fake()->streetAddress(),
+            'contact_person' => fake()->name(),
+            'contact_phone' => fake()->phoneNumber(),
+            'contact_email' => fake()->safeEmail(),
+            'is_active' => true,
         ];
     }
 

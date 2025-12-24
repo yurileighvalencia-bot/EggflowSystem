@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\DeliveryDiscrepancy;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -15,7 +16,12 @@ class InvestigateDiscrepancyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'resolution' => ['required', Rule::in(['accepted', 'rejected', 'partial', 'pending_further_review'])],
+            'resolution' => ['required', Rule::in([
+                DeliveryDiscrepancy::RESOLUTION_APPROVED,
+                DeliveryDiscrepancy::RESOLUTION_REJECTED,
+                DeliveryDiscrepancy::RESOLUTION_PARTIAL_LOSS,
+                DeliveryDiscrepancy::RESOLUTION_OTHER,
+            ])],
             'resolution_notes' => ['required', 'string', 'min:10', 'max:1000'],
             'adjustment_quantity' => ['nullable', 'integer', 'min:0'],
         ];

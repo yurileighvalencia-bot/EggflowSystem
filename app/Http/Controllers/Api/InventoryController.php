@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\InventoryResource;
+use App\Http\Resources\EggCategoryResource;
 use App\Models\Inventory;
 use App\Models\EggCategory;
 use App\Services\InventoryService;
@@ -45,11 +47,14 @@ class InventoryController extends Controller
             });
         }
 
-        $inventory = $query->orderBy('shop_id')
-            ->orderBy('egg_category_id')
-            ->get();
+        $query->orderBy('shop_id')->orderBy('egg_category_id');
 
-        return response()->json(['data' => $inventory]);
+        // Support ?all=true for full inventory view, otherwise paginate
+        if ($request->boolean('all')) {
+            return response()->json(['data' => InventoryResource::collection($query->get())]);
+        }
+
+        return InventoryResource::collection($query->paginate($request->integer('per_page', 15)))->response();
     }
 
     /**
@@ -64,7 +69,7 @@ class InventoryController extends Controller
             : $request->shop_id;
 
         if (!$shopId) {
-            return response()->json(['error' => 'Shop ID is required'], 400);
+            return response()->json(['message' => 'Shop ID is required.'], 400);
         }
 
         $categories = EggCategory::where('is_active', true)->get();
@@ -96,7 +101,7 @@ class InventoryController extends Controller
             : $request->shop_id;
 
         if (!$shopId) {
-            return response()->json(['error' => 'Shop ID is required'], 400);
+            return response()->json(['message' => 'Shop ID is required.'], 400);
         }
 
         $days = $request->get('days', 3);
@@ -125,7 +130,7 @@ class InventoryController extends Controller
 
         if ($newStock < 0) {
             return response()->json([
-                'error' => 'Adjustment would result in negative stock.',
+                'message' => 'Adjustment would result in negative stock.',
             ], 422);
         }
 
@@ -147,7 +152,7 @@ class InventoryController extends Controller
 
         return response()->json([
             'message' => 'Inventory adjusted successfully.',
-            'data' => $inventory->fresh(['shop', 'eggCategory', 'batch']),
+            'data' => new InventoryResource($inventory->fresh(['shop', 'eggCategory', 'batch'])),
             'adjustment' => [
                 'previous' => $oldStock,
                 'change' => $validated['adjustment'],
@@ -177,7 +182,7 @@ class InventoryController extends Controller
         })->values();
 
         return response()->json([
-            'data' => $lowStockItems,
+            'data' => InventoryResource::collection($lowStockItems),
             'total_items' => $lowStockItems->count(),
         ]);
     }

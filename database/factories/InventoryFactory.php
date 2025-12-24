@@ -26,6 +26,7 @@ class InventoryFactory extends Factory
             'egg_category_id' => EggCategory::factory(),
             'available_stock' => fake()->numberBetween(50, 500),
             'reserved_stock' => 0,
+            'unit_price' => fake()->randomFloat(2, 5, 20),
         ];
     }
 

@@ -22,6 +22,7 @@ return new class extends Migration
             $table->integer('current_quantity')->default(0); // Remaining after sales/wastage
             $table->enum('status', ['active', 'depleted', 'expired', 'cancelled'])->default('active');
             $table->text('notes')->nullable();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes();
 
