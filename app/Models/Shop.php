@@ -85,4 +85,12 @@ class Shop extends Model implements Auditable
     {
         return $this->hasMany(WastageLog::class);
     }
+
+    /**
+     * Get the deliveries for this shop.
+     */
+    public function deliveries(): HasMany
+    {
+        return $this->hasMany(Delivery::class);
+    }
 }

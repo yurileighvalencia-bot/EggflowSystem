@@ -43,6 +43,7 @@ class DatabaseSeeder extends Seeder
         $manager = User::factory()->create([
             'name' => 'System Manager',
             'email' => 'manager@eggflow.local',
+            'email_verified_at' => now(),
             'farm_id' => $farm->id,
             'shop_id' => $shop->id,
         ]);
@@ -52,6 +53,7 @@ class DatabaseSeeder extends Seeder
         $farmStaff = User::factory()->create([
             'name' => 'Farm Staff',
             'email' => 'farmstaff@eggflow.local',
+            'email_verified_at' => now(),
             'farm_id' => $farm->id,
         ]);
         $farmStaff->assignRole('farm_staff');
@@ -60,6 +62,7 @@ class DatabaseSeeder extends Seeder
         $shopStaff = User::factory()->create([
             'name' => 'Shop Staff',
             'email' => 'shopstaff@eggflow.local',
+            'email_verified_at' => now(),
             'shop_id' => $shop->id,
         ]);
         $shopStaff->assignRole('shop_staff');
@@ -68,6 +71,7 @@ class DatabaseSeeder extends Seeder
         $customer = User::factory()->create([
             'name' => 'Test Customer',
             'email' => 'customer@eggflow.local',
+            'email_verified_at' => now(),
         ]);
         $customer->assignRole('customer');
     }

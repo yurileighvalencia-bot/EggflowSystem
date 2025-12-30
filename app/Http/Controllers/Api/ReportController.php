@@ -31,6 +31,11 @@ class ReportController extends Controller
     {
         $this->authorize('view-reports');
 
+        $request->validate([
+            'date' => 'nullable|date',
+            'shop_id' => 'nullable|integer|exists:shops,id',
+        ]);
+
         $date = $request->filled('date') 
             ? Carbon::parse($request->date) 
             : today();
@@ -40,7 +45,6 @@ class ReportController extends Controller
         $data = $this->salesService->getDailySummary($date, $shopId);
 
         return response()->json([
-            'success' => true,
             'data' => $data,
         ]);
     }
@@ -52,6 +56,11 @@ class ReportController extends Controller
     {
         $this->authorize('view-reports');
 
+        $request->validate([
+            'week_start' => 'nullable|date',
+            'shop_id' => 'nullable|integer|exists:shops,id',
+        ]);
+
         $weekStart = $request->filled('week_start') 
             ? Carbon::parse($request->week_start)->startOfWeek() 
             : now()->startOfWeek();
@@ -61,7 +70,6 @@ class ReportController extends Controller
         $data = $this->salesService->getWeeklyReport($shopId, $weekStart);
 
         return response()->json([
-            'success' => true,
             'data' => $data,
         ]);
     }
@@ -73,6 +81,12 @@ class ReportController extends Controller
     {
         $this->authorize('view-reports');
 
+        $request->validate([
+            'year' => 'nullable|integer|min:2020|max:2099',
+            'month' => 'nullable|integer|min:1|max:12',
+            'shop_id' => 'nullable|integer|exists:shops,id',
+        ]);
+
         $year = $request->input('year', now()->year);
         $month = $request->input('month', now()->month);
         $shopId = $request->input('shop_id');
@@ -80,7 +94,6 @@ class ReportController extends Controller
         $data = $this->salesService->getMonthlyReport($year, $month, $shopId);
 
         return response()->json([
-            'success' => true,
             'data' => $data,
         ]);
     }
@@ -105,7 +118,6 @@ class ReportController extends Controller
         $data = $this->salesService->getDateRangeReport($startDate, $endDate, $shopId);
 
         return response()->json([
-            'success' => true,
             'data' => $data,
         ]);
     }
@@ -131,7 +143,6 @@ class ReportController extends Controller
         $data = $this->salesService->getTopCategories($startDate, $endDate, $shopId, $limit);
 
         return response()->json([
-            'success' => true,
             'data' => $data,
         ]);
     }
@@ -147,7 +158,6 @@ class ReportController extends Controller
         $data = $this->inventoryService->getCurrentSnapshot($shopId);
 
         return response()->json([
-            'success' => true,
             'data' => $data,
         ]);
     }
@@ -163,7 +173,6 @@ class ReportController extends Controller
         $data = $this->inventoryService->getLowStockReport($shopId);
 
         return response()->json([
-            'success' => true,
             'data' => $data,
         ]);
     }
@@ -181,7 +190,6 @@ class ReportController extends Controller
         $data = $this->inventoryService->getExpiringReport($withinDays, $shopId);
 
         return response()->json([
-            'success' => true,
             'data' => $data,
         ]);
     }
@@ -205,7 +213,6 @@ class ReportController extends Controller
         $data = $this->inventoryService->getMovementReport($startDate, $endDate, $shopId);
 
         return response()->json([
-            'success' => true,
             'data' => $data,
         ]);
     }
@@ -221,7 +228,6 @@ class ReportController extends Controller
         $data = $this->inventoryService->getValuationReport($shopId);
 
         return response()->json([
-            'success' => true,
             'data' => $data,
         ]);
     }
@@ -246,7 +252,6 @@ class ReportController extends Controller
         $data = $this->wastageService->getSummary($startDate, $endDate, $shopId);
 
         return response()->json([
-            'success' => true,
             'data' => $data,
         ]);
     }
@@ -264,7 +269,6 @@ class ReportController extends Controller
         $data = $this->wastageService->getTrends($months, $shopId);
 
         return response()->json([
-            'success' => true,
             'data' => $data,
         ]);
     }
@@ -289,7 +293,6 @@ class ReportController extends Controller
         $data = $this->wastageService->getBySourceReport($startDate, $endDate, $shopId);
 
         return response()->json([
-            'success' => true,
             'data' => $data,
         ]);
     }
@@ -312,7 +315,6 @@ class ReportController extends Controller
         $data = $this->wastageService->getDiscrepancyAnalysis($startDate, $endDate);
 
         return response()->json([
-            'success' => true,
             'data' => $data,
         ]);
     }
@@ -337,7 +339,6 @@ class ReportController extends Controller
         $data = $this->wastageService->getCollectionEfficiencyReport($startDate, $endDate, $farmId);
 
         return response()->json([
-            'success' => true,
             'data' => $data,
         ]);
     }
@@ -363,7 +364,6 @@ class ReportController extends Controller
         $data = $this->comparisonService->getComparison($startDate, $endDate, $farmId, $shopId);
 
         return response()->json([
-            'success' => true,
             'data' => $data,
         ]);
     }
@@ -379,7 +379,6 @@ class ReportController extends Controller
         $data = $this->comparisonService->getWeeklyComparison($shopId);
 
         return response()->json([
-            'success' => true,
             'data' => $data,
         ]);
     }
@@ -397,7 +396,6 @@ class ReportController extends Controller
         $data = $this->comparisonService->getMonthlyTrend($year, $shopId);
 
         return response()->json([
-            'success' => true,
             'data' => $data,
         ]);
     }

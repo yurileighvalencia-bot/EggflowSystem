@@ -107,6 +107,94 @@ class User extends Authenticatable implements Auditable, MustVerifyEmail
     }
 
     /**
+     * Get the batches created by this user.
+     */
+    public function batchesCreated(): HasMany
+    {
+        return $this->hasMany(Batch::class, 'created_by');
+    }
+
+    /**
+     * Get the daily collections verified by this user.
+     */
+    public function verificationsPerformed(): HasMany
+    {
+        return $this->hasMany(DailyCollection::class, 'verified_by');
+    }
+
+    /**
+     * Get the deliveries dispatched by this user.
+     */
+    public function dispatchedDeliveries(): HasMany
+    {
+        return $this->hasMany(Delivery::class, 'dispatched_by');
+    }
+
+    /**
+     * Get the deliveries received by this user.
+     */
+    public function receivedDeliveries(): HasMany
+    {
+        return $this->hasMany(Delivery::class, 'received_by');
+    }
+
+    /**
+     * Get the discrepancies reported by this user.
+     */
+    public function reportedDiscrepancies(): HasMany
+    {
+        return $this->hasMany(DeliveryDiscrepancy::class, 'reported_by');
+    }
+
+    /**
+     * Get the discrepancies investigated by this user.
+     */
+    public function investigatedDiscrepancies(): HasMany
+    {
+        return $this->hasMany(DeliveryDiscrepancy::class, 'investigated_by');
+    }
+
+    /**
+     * Get the reservations cancelled by this user (staff).
+     */
+    public function cancelledReservations(): HasMany
+    {
+        return $this->hasMany(Reservation::class, 'cancelled_by');
+    }
+
+    /**
+     * Get the restock requests created by this user.
+     */
+    public function restockRequestsMade(): HasMany
+    {
+        return $this->hasMany(RestockRequest::class, 'requested_by');
+    }
+
+    /**
+     * Get the restock requests acknowledged by this user.
+     */
+    public function restockRequestsAcknowledged(): HasMany
+    {
+        return $this->hasMany(RestockRequest::class, 'acknowledged_by');
+    }
+
+    /**
+     * Get the wastage logs recorded by this user.
+     */
+    public function loggedWastage(): HasMany
+    {
+        return $this->hasMany(WastageLog::class, 'logged_by');
+    }
+
+    /**
+     * Get the daily collection revisions performed by this user.
+     */
+    public function collectionRevisionsPerformed(): HasMany
+    {
+        return $this->hasMany(DailyCollectionRevision::class, 'changed_by');
+    }
+
+    /**
      * Check if user is a farm staff member.
      */
     public function isFarmStaff(): bool

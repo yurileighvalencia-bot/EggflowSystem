@@ -21,6 +21,13 @@ class DailyCollectionController extends Controller
     {
         $this->authorize('viewAny', DailyCollection::class);
 
+        $request->validate([
+            'date' => 'nullable|date',
+            'batch_id' => 'nullable|integer|exists:batches,id',
+            'egg_category_id' => 'nullable|integer|exists:egg_categories,id',
+            'per_page' => 'nullable|integer|min:1|max:100',
+        ]);
+
         $query = DailyCollection::with(['staff', 'batch', 'eggCategory', 'farm']);
 
         // Filter by farm for farm staff

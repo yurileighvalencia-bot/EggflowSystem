@@ -27,6 +27,14 @@ class InventoryController extends Controller
     {
         $this->authorize('viewAny', Inventory::class);
 
+        $request->validate([
+            'shop_id' => 'nullable|integer|exists:shops,id',
+            'egg_category_id' => 'nullable|integer|exists:egg_categories,id',
+            'low_stock' => 'nullable|boolean',
+            'all' => 'nullable|boolean',
+            'per_page' => 'nullable|integer|min:1|max:100',
+        ]);
+
         $query = Inventory::with(['shop', 'eggCategory', 'batch']);
 
         // Filter by shop for shop staff

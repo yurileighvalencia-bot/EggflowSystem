@@ -114,6 +114,38 @@ class Batch extends Model implements Auditable
     }
 
     /**
+     * Get the sale items for this batch.
+     */
+    public function saleItems(): HasMany
+    {
+        return $this->hasMany(SaleItem::class);
+    }
+
+    /**
+     * Get the reservation items for this batch.
+     */
+    public function reservationItems(): HasMany
+    {
+        return $this->hasMany(ReservationItem::class);
+    }
+
+    /**
+     * Get the delivery items for this batch.
+     */
+    public function deliveryItems(): HasMany
+    {
+        return $this->hasMany(DeliveryItem::class);
+    }
+
+    /**
+     * Get the wastage logs for this batch.
+     */
+    public function wastageLogs(): HasMany
+    {
+        return $this->hasMany(WastageLog::class);
+    }
+
+    /**
      * Check if batch is expired.
      */
     public function isExpired(): bool

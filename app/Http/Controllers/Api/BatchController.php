@@ -21,6 +21,15 @@ class BatchController extends Controller
     {
         $this->authorize('viewAny', Batch::class);
 
+        $request->validate([
+            'status' => 'nullable|in:active,depleted,expired',
+            'egg_category_id' => 'nullable|integer|exists:egg_categories,id',
+            'from_date' => 'nullable|date',
+            'to_date' => 'nullable|date|after_or_equal:from_date',
+            'expiring_soon' => 'nullable|boolean',
+            'per_page' => 'nullable|integer|min:1|max:100',
+        ]);
+
         $query = Batch::with(['farm', 'eggCategory']);
 
         // Filter by farm for farm staff

@@ -50,7 +50,7 @@ Route::prefix('v1')->group(function () {
         ->name('verification.verify');
 
     // Protected routes with general API rate limiting
-    Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
+    Route::middleware(['auth:sanctum', 'verified', 'throttle:api'])->group(function () {
     // Auth
     Route::get('/user', [AuthController::class, 'user'])->name('user');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -67,18 +67,18 @@ Route::prefix('v1')->group(function () {
     // Egg Categories
     Route::apiResource('egg-categories', EggCategoryController::class)->parameters([
         'egg-categories' => 'category'
-    ]);
+    ])->except(['destroy']);
     Route::post('/egg-categories/{category}/toggle-active', [EggCategoryController::class, 'toggleActive'])
         ->name('egg-categories.toggle-active');
 
     // Farms
-    Route::apiResource('farms', FarmController::class);
+    Route::apiResource('farms', FarmController::class)->except(['destroy']);
 
     // Shops
-    Route::apiResource('shops', ShopController::class);
+    Route::apiResource('shops', ShopController::class)->except(['destroy']);
 
     // Users
-    Route::apiResource('users', UserController::class);
+    Route::apiResource('users', UserController::class)->except(['destroy']);
     Route::post('/users/{user}/toggle-active', [UserController::class, 'toggleActive'])
         ->name('users.toggle-active');
     Route::post('/users/{user}/password', [UserController::class, 'updatePassword'])

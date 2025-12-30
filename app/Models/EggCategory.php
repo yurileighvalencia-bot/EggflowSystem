@@ -67,6 +67,38 @@ class EggCategory extends Model implements Auditable
     }
 
     /**
+     * Get the sale items for this egg category.
+     */
+    public function saleItems(): HasMany
+    {
+        return $this->hasMany(SaleItem::class);
+    }
+
+    /**
+     * Get the reservation items for this egg category.
+     */
+    public function reservationItems(): HasMany
+    {
+        return $this->hasMany(ReservationItem::class);
+    }
+
+    /**
+     * Get the delivery items for this egg category.
+     */
+    public function deliveryItems(): HasMany
+    {
+        return $this->hasMany(DeliveryItem::class);
+    }
+
+    /**
+     * Get the wastage logs for this egg category.
+     */
+    public function wastageLogs(): HasMany
+    {
+        return $this->hasMany(WastageLog::class);
+    }
+
+    /**
      * Scope for active categories only.
      */
     public function scopeActive($query)

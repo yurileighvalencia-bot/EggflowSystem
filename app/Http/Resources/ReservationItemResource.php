@@ -19,6 +19,8 @@ class ReservationItemResource extends JsonResource
             'reservation_id' => $this->reservation_id,
             'egg_category' => new EggCategoryResource($this->whenLoaded('eggCategory')),
             'egg_category_id' => $this->egg_category_id,
+            'batch' => new BatchResource($this->whenLoaded('batch')),
+            'batch_id' => $this->batch_id,
             'quantity' => $this->quantity,
             'unit_price' => (float) $this->unit_price,
             'line_total' => (float) $this->line_total,

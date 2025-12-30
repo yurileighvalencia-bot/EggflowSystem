@@ -36,6 +36,12 @@ class DeliveryController extends Controller
     {
         $this->authorize('viewAny', Delivery::class);
 
+        $request->validate([
+            'status' => 'nullable|in:dispatched,in_transit,received,partial',
+            'shop_id' => 'nullable|integer|exists:shops,id',
+            'per_page' => 'nullable|integer|min:1|max:100',
+        ]);
+
         $query = Delivery::with(['restockRequest.shop', 'restockRequest.eggCategory', 'dispatcher', 'receiver']);
 
         // Filter by shop for shop staff

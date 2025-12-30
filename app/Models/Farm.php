@@ -49,4 +49,12 @@ class Farm extends Model implements Auditable
     {
         return $this->hasMany(Batch::class);
     }
+
+    /**
+     * Get the daily collections for this farm.
+     */
+    public function dailyCollections(): HasMany
+    {
+        return $this->hasMany(DailyCollection::class);
+    }
 }

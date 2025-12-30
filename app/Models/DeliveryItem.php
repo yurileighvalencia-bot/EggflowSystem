@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use OwenIt\Auditing\Contracts\Auditable;
 
 class DeliveryItem extends Model implements Auditable
@@ -56,6 +57,14 @@ class DeliveryItem extends Model implements Auditable
     public function eggCategory(): BelongsTo
     {
         return $this->belongsTo(EggCategory::class);
+    }
+
+    /**
+     * Get the discrepancies for this delivery item.
+     */
+    public function discrepancies(): HasMany
+    {
+        return $this->hasMany(DeliveryDiscrepancy::class);
     }
 
     /**
