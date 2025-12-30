@@ -64,7 +64,3 @@ class BatchExpiredNotification extends Notification implements ShouldQueue
         ];
     }
 }
-            //
-        ];
-    }
-}
