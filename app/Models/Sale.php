@@ -41,6 +41,7 @@ class Sale extends Model implements Auditable
         'customer_id',
         'staff_id',
         'reservation_id',
+        'shift_id',
         'sale_code',
         'subtotal',
         'tax',
@@ -99,6 +100,11 @@ class Sale extends Model implements Auditable
     public function reservation(): BelongsTo
     {
         return $this->belongsTo(Reservation::class);
+    }
+
+    public function shift(): BelongsTo
+    {
+        return $this->belongsTo(Shift::class);
     }
 
     public function items(): HasMany

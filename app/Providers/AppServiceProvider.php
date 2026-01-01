@@ -12,9 +12,12 @@ use App\Models\Inventory;
 use App\Models\Reservation;
 use App\Models\RestockRequest;
 use App\Models\Sale;
+use App\Models\Shift;
+use App\Models\ShiftAdjustment;
 use App\Models\Shop;
 use App\Models\User;
 use App\Models\WastageLog;
+use App\Policies\AuditPolicy;
 use App\Policies\BatchPolicy;
 use App\Policies\DailyCollectionPolicy;
 use App\Policies\DeliveryDiscrepancyPolicy;
@@ -25,6 +28,8 @@ use App\Policies\InventoryPolicy;
 use App\Policies\ReservationPolicy;
 use App\Policies\RestockRequestPolicy;
 use App\Policies\SalePolicy;
+use App\Policies\ShiftPolicy;
+use App\Policies\ShiftAdjustmentPolicy;
 use App\Policies\ShopPolicy;
 use App\Policies\UserPolicy;
 use App\Policies\WastageLogPolicy;
@@ -33,6 +38,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use OwenIt\Auditing\Models\Audit;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -42,6 +48,7 @@ class AppServiceProvider extends ServiceProvider
      * @var array<class-string, class-string>
      */
     protected array $policies = [
+        Audit::class => AuditPolicy::class,
         Batch::class => BatchPolicy::class,
         DailyCollection::class => DailyCollectionPolicy::class,
         Delivery::class => DeliveryPolicy::class,
@@ -52,6 +59,8 @@ class AppServiceProvider extends ServiceProvider
         Reservation::class => ReservationPolicy::class,
         RestockRequest::class => RestockRequestPolicy::class,
         Sale::class => SalePolicy::class,
+        Shift::class => ShiftPolicy::class,
+        ShiftAdjustment::class => ShiftAdjustmentPolicy::class,
         Shop::class => ShopPolicy::class,
         User::class => UserPolicy::class,
         WastageLog::class => WastageLogPolicy::class,

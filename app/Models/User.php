@@ -195,6 +195,38 @@ class User extends Authenticatable implements Auditable, MustVerifyEmail
     }
 
     /**
+     * Get the shifts opened by this user.
+     */
+    public function shifts(): HasMany
+    {
+        return $this->hasMany(Shift::class);
+    }
+
+    /**
+     * Get the shift adjustments made by this user.
+     */
+    public function shiftAdjustments(): HasMany
+    {
+        return $this->hasMany(ShiftAdjustment::class);
+    }
+
+    /**
+     * Get the current open shift for this user.
+     */
+    public function currentShift(): ?Shift
+    {
+        return $this->shifts()->open()->latest('opened_at')->first();
+    }
+
+    /**
+     * Check if user has an open shift.
+     */
+    public function hasOpenShift(): bool
+    {
+        return $this->shifts()->open()->exists();
+    }
+
+    /**
      * Check if user is a farm staff member.
      */
     public function isFarmStaff(): bool

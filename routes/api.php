@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AuditController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BatchController;
 use App\Http\Controllers\Api\BulkOperationsController;
@@ -220,6 +221,15 @@ Route::prefix('v1')->group(function () {
         Route::get('/download/comparison', [ReportController::class, 'downloadComparisonReport'])->name('download.comparison');
         Route::get('/download/receipt/{sale}', [ReportController::class, 'downloadSaleReceipt'])->name('download.receipt');
         Route::get('/download/manifest/{delivery}', [ReportController::class, 'downloadDeliveryManifest'])->name('download.manifest');
+    });
+
+    // ==================== AUDITS ====================
+    Route::prefix('audits')->name('audits.')->group(function () {
+        Route::get('/', [AuditController::class, 'index'])->name('index');
+        Route::get('/models', [AuditController::class, 'models'])->name('models');
+        Route::get('/events', [AuditController::class, 'events'])->name('events');
+        Route::get('/recent', [AuditController::class, 'recent'])->name('recent');
+        Route::get('/{model}/{id}', [AuditController::class, 'show'])->name('show');
     });
 });
 }); // End of v1 prefix

@@ -17,6 +17,9 @@ class WastageLog extends Model implements Auditable
     const SOURCE_DELIVERY_REJECTION = 'delivery_rejection';
     const SOURCE_BATCH_EXPIRED = 'batch_expired';
     const SOURCE_INVENTORY_ADJUSTMENT = 'inventory_adjustment';
+    const SOURCE_BREAKAGE = 'breakage';
+    const SOURCE_THEFT = 'theft';
+    const SOURCE_DAMAGED_IN_TRANSIT = 'damaged_in_transit';
     const SOURCE_OTHER = 'other';
 
     const SOURCES = [
@@ -24,6 +27,9 @@ class WastageLog extends Model implements Auditable
         self::SOURCE_DELIVERY_REJECTION => 'Delivery Rejection',
         self::SOURCE_BATCH_EXPIRED => 'Batch Expired',
         self::SOURCE_INVENTORY_ADJUSTMENT => 'Inventory Adjustment',
+        self::SOURCE_BREAKAGE => 'Breakage',
+        self::SOURCE_THEFT => 'Theft',
+        self::SOURCE_DAMAGED_IN_TRANSIT => 'Damaged in Transit',
         self::SOURCE_OTHER => 'Other',
     ];
 
@@ -131,13 +137,7 @@ class WastageLog extends Model implements Auditable
      */
     public static function getSources(): array
     {
-        return [
-            self::SOURCE_SHOP_SPOILAGE => 'Shop Spoilage',
-            self::SOURCE_DELIVERY_REJECTION => 'Delivery Rejection',
-            self::SOURCE_BATCH_EXPIRED => 'Batch Expired',
-            self::SOURCE_INVENTORY_ADJUSTMENT => 'Inventory Adjustment',
-            self::SOURCE_OTHER => 'Other',
-        ];
+        return self::SOURCES;
     }
 
     /**
