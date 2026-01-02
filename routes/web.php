@@ -143,4 +143,6 @@ Route::prefix('settings')->name('settings.')->group(function () {
 // ==========================================
 // Placeholder Routes (to be implemented)
 // ==========================================
-Route::get('/restock-requests', fn () => 'Restock Requests Coming Soon')->name('restock-requests');
+Route::prefix('restock-requests')->name('restock-requests.')->group(function () {
+    Route::get('/', \App\Livewire\RestockRequests\RestockRequestList::class)->name('index');
+});

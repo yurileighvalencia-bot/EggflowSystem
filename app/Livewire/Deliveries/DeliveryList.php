@@ -6,6 +6,7 @@ use App\Models\Delivery;
 use App\Models\Shop;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -48,6 +49,26 @@ class DeliveryList extends Component
         }
         $this->dateFrom = now()->subDays(7)->format('Y-m-d');
         $this->dateTo = now()->format('Y-m-d');
+    }
+
+    /**
+     * Get the current shop ID for Echo listener.
+     */
+    #[Computed]
+    public function currentShopId(): ?int
+    {
+        return $this->shopId ?? auth()->user()?->shop_id;
+    }
+
+    /**
+     * Listen for new delivery dispatched events via Echo.
+     */
+    #[On('echo:deliveries.{currentShopId},DeliveryDispatched')]
+    public function handleDeliveryDispatched(): void
+    {
+        // Refresh the deliveries list when a new delivery is dispatched
+        unset($this->deliveries);
+        unset($this->stats);
     }
 
     /**

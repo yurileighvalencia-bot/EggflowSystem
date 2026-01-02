@@ -89,6 +89,18 @@
         </div>
     </div>
 
+    {{-- Daily Sales Trend Chart --}}
+    <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Daily Sales Trend</h2>
+        <div 
+            x-data="salesTrendChart(@js($this->salesByDate->reverse()->values()))"
+            x-init="init()"
+            wire:ignore
+        >
+            <div x-ref="chart" class="w-full h-80"></div>
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {{-- Sales by Date --}}
         <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">

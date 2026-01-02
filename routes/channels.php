@@ -55,3 +55,14 @@ Broadcast::channel('alerts.low-stock.{shopId}', function ($user, int $shopId) {
     
     return $user->shop_id === $shopId;
 });
+
+// Deliveries channel for shop staff
+Broadcast::channel('deliveries.{shopId}', function ($user, int $shopId) {
+    // Managers can listen to any shop's deliveries
+    if ($user->hasRole('Manager')) {
+        return true;
+    }
+    
+    // Shop staff can only listen to their own shop's deliveries
+    return $user->shop_id === $shopId;
+});
