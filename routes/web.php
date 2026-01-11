@@ -1,5 +1,13 @@
 <?php
 
+<<<<<<< HEAD
+=======
+use App\Livewire\Auth\Login;
+use App\Livewire\Auth\Register;
+use App\Livewire\Auth\ForgotPassword;
+use App\Livewire\Auth\ResetPassword;
+use App\Livewire\Auth\VerifyEmail;
+>>>>>>> 541b0ad (changes on new pc)
 use App\Livewire\Collections\CollectionList;
 use App\Livewire\Collections\DailyCollectionForm;
 use App\Livewire\Collections\VerifyCollections;
@@ -17,6 +25,7 @@ use App\Livewire\POS\PointOfSale;
 use App\Livewire\POS\TransactionHistory;
 use Illuminate\Support\Facades\Route;
 
+<<<<<<< HEAD
 Route::get('/', function () {
     return view('welcome');
 });
@@ -145,4 +154,162 @@ Route::prefix('settings')->name('settings.')->group(function () {
 // ==========================================
 Route::prefix('restock-requests')->name('restock-requests.')->group(function () {
     Route::get('/', \App\Livewire\RestockRequests\RestockRequestList::class)->name('index');
+=======
+// ==========================================
+// Public Routes
+// ==========================================
+Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect()->route('home');
+    }
+    return redirect()->route('login');
+});
+
+// ==========================================
+// Guest Routes (Auth)
+// ==========================================
+Route::middleware('guest')->group(function () {
+    Route::get('/login', Login::class)->name('login');
+    Route::get('/register', Register::class)->name('register');
+    Route::get('/forgot-password', ForgotPassword::class)->name('password.request');
+    Route::get('/reset-password/{token}', ResetPassword::class)->name('password.reset');
+});
+
+// ==========================================
+// Authenticated Routes
+// ==========================================
+Route::middleware(['auth'])->group(function () {
+    // Email Verification
+    Route::get('/email/verify', VerifyEmail::class)
+        ->name('verification.notice');
+
+    // Logout
+    Route::post('/logout', function () {
+        auth()->logout();
+        session()->invalidate();
+        session()->regenerateToken();
+        return redirect()->route('login');
+    })->name('logout');
+
+    // Smart dashboard redirect based on user role
+    Route::get('/home', function () {
+        $user = auth()->user();
+
+        // Route based on role
+        if ($user->hasRole('Manager')) {
+            return redirect()->route('manager.dashboard');
+        }
+
+        if ($user->hasRole('Farm Staff')) {
+            return redirect()->route('farm.dashboard');
+        }
+
+        if ($user->hasRole('Shop Staff')) {
+            return redirect()->route('shop.dashboard');
+        }
+
+        // Default fallback
+        return redirect()->route('web.dashboard');
+    })->name('home');
+
+    // Legacy dashboard (for backward compatibility)
+    Route::get('/dashboard', Dashboard::class)->name('web.dashboard');
+
+    // Role-based dashboards
+    Route::get('/manager/dashboard', ManagerDashboard::class)->name('manager.dashboard');
+    Route::get('/shop/dashboard', ShopDashboard::class)->name('shop.dashboard');
+    Route::get('/farm/dashboard', FarmDashboard::class)->name('farm.dashboard');
+
+    // ==========================================
+    // Inventory Module Routes
+    // ==========================================
+    Route::prefix('inventory')->name('inventory.')->group(function () {
+        Route::get('/stock', StockOverview::class)->name('stock');
+        Route::get('/low-stock', LowStockAlerts::class)->name('low-stock');
+        Route::get('/expiring', ExpiringBatches::class)->name('expiring');
+        Route::get('/log-wastage', \App\Livewire\Inventory\LogWastage::class)->name('log-wastage');
+        Route::get('/wastage-history', \App\Livewire\Inventory\WastageHistory::class)->name('wastage-history');
+    });
+
+    // ==========================================
+    // POS Module Routes
+    // ==========================================
+    Route::prefix('pos')->name('pos.')->group(function () {
+        Route::get('/', PointOfSale::class)->name('index');
+        Route::get('/history', TransactionHistory::class)->name('history');
+    });
+
+    // Legacy route alias for POS (keeping backward compatibility)
+    Route::get('/pos-sale', PointOfSale::class)->name('pos');
+
+    // ==========================================
+    // Print Routes
+    // ==========================================
+    Route::get('/print/receipt/{sale}', function (\App\Models\Sale $sale) {
+        $sale->load(['shop', 'staff', 'items.category']);
+        return view('print.receipt', compact('sale'));
+    })->name('print.receipt');
+
+    // ==========================================
+    // Collections Module Routes
+    // ==========================================
+    Route::prefix('collections')->name('collections.')->group(function () {
+        Route::get('/', CollectionList::class)->name('index');
+        Route::get('/create', DailyCollectionForm::class)->name('create');
+        Route::get('/verify', VerifyCollections::class)->name('verify');
+    });
+
+    // ==========================================
+    // Deliveries Module Routes
+    // ==========================================
+    Route::prefix('deliveries')->name('deliveries.')->group(function () {
+        Route::get('/', DeliveryList::class)->name('index');
+        Route::get('/dispatch', DispatchDelivery::class)->name('dispatch');
+        Route::get('/{delivery}', DeliveryList::class)->name('show');
+        Route::get('/{delivery}/receive', ReceiveDelivery::class)->name('receive');
+    });
+
+    // ==========================================
+    // Reservations Module Routes
+    // ==========================================
+    Route::prefix('reservations')->name('reservations.')->group(function () {
+        Route::get('/', \App\Livewire\Reservations\ReservationList::class)->name('index');
+        Route::get('/create', \App\Livewire\Reservations\CreateReservation::class)->name('create');
+        Route::get('/{reservation}/convert', \App\Livewire\Reservations\ConvertToSale::class)->name('convert');
+    });
+
+    // ==========================================
+    // Reports Module Routes
+    // ==========================================
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('/sales', \App\Livewire\Reports\SalesSummary::class)->name('sales');
+        Route::get('/shifts', \App\Livewire\Reports\ShiftReport::class)->name('shifts');
+    });
+
+    // ==========================================
+    // Activity Feed
+    // ==========================================
+    Route::get('/activity', \App\Livewire\Dashboard\ActivityFeed::class)->name('activity-feed');
+
+    // ==========================================
+    // Notification Center
+    // ==========================================
+    Route::get('/notifications', \App\Livewire\Dashboard\NotificationCenter::class)->name('notifications');
+
+    // ==========================================
+    // Settings Module Routes
+    // ==========================================
+    Route::prefix('settings')->name('settings.')->group(function () {
+        Route::get('/', \App\Livewire\Settings\SettingsPage::class)->name('index');
+        Route::get('/categories', \App\Livewire\Settings\CategoryManagement::class)->name('categories');
+        Route::get('/users', \App\Livewire\Settings\UserManagement::class)->name('users');
+    });
+
+    // ==========================================
+    // Restock Requests Module Routes
+    // ==========================================
+    Route::prefix('restock-requests')->name('restock-requests.')->group(function () {
+        Route::get('/', \App\Livewire\RestockRequests\RestockRequestList::class)->name('index');
+    });
+>>>>>>> 541b0ad (changes on new pc)
 });
