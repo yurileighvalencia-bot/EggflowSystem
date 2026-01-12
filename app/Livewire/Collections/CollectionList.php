@@ -6,6 +6,7 @@ use App\Models\DailyCollection;
 use App\Models\EggCategory;
 use App\Models\Farm;
 use App\Models\User;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -17,6 +18,7 @@ use Livewire\WithPagination;
 #[Title('Collection Records')]
 class CollectionList extends Component
 {
+    use AuthorizesRequests;
     use WithPagination;
 
     #[Url]
@@ -151,6 +153,8 @@ class CollectionList extends Component
      */
     public function saveEdit(): void
     {
+        $this->authorize('revise-collection');
+
         $this->validate([
             'editQuantity' => 'required|integer|min:1',
             'editReason' => 'required|string|min:5|max:500',

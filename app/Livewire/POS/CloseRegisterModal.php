@@ -3,11 +3,13 @@
 namespace App\Livewire\POS;
 
 use App\Models\Shift;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 class CloseRegisterModal extends Component
 {
+    use AuthorizesRequests;
     public bool $show = false;
     public ?Shift $shift = null;
     public bool $closed = false;
@@ -146,6 +148,8 @@ class CloseRegisterModal extends Component
      */
     public function closeShift(): void
     {
+        $this->authorize('create-sale');
+
         if (!$this->shift || !$this->shift->isOpen()) {
             session()->flash('error', 'Shift is not open.');
             $this->hide();

@@ -6,12 +6,14 @@ use App\Events\RestockRequestCreated;
 use App\Models\EggCategory;
 use App\Models\RestockRequest;
 use App\Models\Shop;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 class CreateRestockRequest extends Component
 {
+    use AuthorizesRequests;
     public ?int $shopId = null;
     public ?int $categoryId = null;
     public int $quantity = 0;
@@ -75,6 +77,8 @@ class CreateRestockRequest extends Component
      */
     public function save(): void
     {
+        $this->authorize('create-restock-request');
+
         $this->validate();
 
         // Check for active request

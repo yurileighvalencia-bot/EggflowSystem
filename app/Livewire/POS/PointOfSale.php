@@ -7,12 +7,14 @@ use App\Events\SaleCompleted;
 use App\Events\StockUpdated;
 use App\Exceptions\InsufficientStockException;
 use App\Models\Batch;
+use App\Models\Customer;
 use App\Models\EggCategory;
 use App\Models\Inventory;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Shift;
 use App\Models\Shop;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
@@ -25,6 +27,7 @@ use Livewire\Component;
 #[Title('Point of Sale')]
 class PointOfSale extends Component
 {
+    use AuthorizesRequests;
     public ?int $shopId = null;
     public array $cart = [];
     public string $paymentMethod = 'cash';
@@ -34,6 +37,15 @@ class PointOfSale extends Component
     public float $amountTendered = 0;
     public ?Sale $lastSale = null;
     public bool $showReceiptModal = false;
+
+    // Customer selection properties
+    public string $customerSearch = '';
+    public ?int $customerId = null;
+    public ?Customer $selectedCustomer = null;
+    public bool $showCustomerDropdown = false;
+    public bool $showQuickAddCustomer = false;
+    public string $newCustomerName = '';
+    public string $newCustomerPhone = '';
 
     public function mount(): void
     {
@@ -115,6 +127,93 @@ class PointOfSale extends Component
     public function shop(): ?Shop
     {
         return Shop::find($this->shopId);
+    }
+
+    /**
+     * Search for customers based on query.
+     */
+    #[Computed]
+    public function customerResults(): Collection
+    {
+        if (strlen($this->customerSearch) < 2) {
+            return collect();
+        }
+
+        return Customer::active()
+            ->search($this->customerSearch)
+            ->limit(10)
+            ->get();
+    }
+
+    /**
+     * Update customer search and show dropdown.
+     */
+    public function updatedCustomerSearch(): void
+    {
+        $this->showCustomerDropdown = strlen($this->customerSearch) >= 2;
+        $this->showQuickAddCustomer = false;
+    }
+
+    /**
+     * Select a customer for the sale.
+     */
+    public function selectCustomer(int $customerId): void
+    {
+        $this->selectedCustomer = Customer::find($customerId);
+        $this->customerId = $customerId;
+        $this->customerSearch = $this->selectedCustomer?->display_name ?? '';
+        $this->showCustomerDropdown = false;
+        $this->showQuickAddCustomer = false;
+    }
+
+    /**
+     * Clear selected customer (for walk-in sale).
+     */
+    public function clearCustomer(): void
+    {
+        $this->selectedCustomer = null;
+        $this->customerId = null;
+        $this->customerSearch = '';
+        $this->showCustomerDropdown = false;
+        $this->showQuickAddCustomer = false;
+    }
+
+    /**
+     * Show quick add customer form.
+     */
+    public function showQuickAdd(): void
+    {
+        $this->showQuickAddCustomer = true;
+        $this->showCustomerDropdown = false;
+        $this->newCustomerName = $this->customerSearch;
+        $this->newCustomerPhone = '';
+    }
+
+    /**
+     * Create a new customer quickly and select them.
+     */
+    public function createQuickCustomer(): void
+    {
+        $this->validate([
+            'newCustomerName' => 'required|min:3|max:255',
+            'newCustomerPhone' => 'nullable|regex:/^[0-9\-\+\s]+$/|max:20',
+        ], [
+            'newCustomerName.required' => 'Customer name is required.',
+            'newCustomerName.min' => 'Customer name must be at least 3 characters.',
+            'newCustomerPhone.regex' => 'Please enter a valid phone number.',
+        ]);
+
+        $customer = Customer::create([
+            'name' => $this->newCustomerName,
+            'phone' => $this->newCustomerPhone ?: null,
+        ]);
+
+        $this->selectCustomer($customer->id);
+        $this->showQuickAddCustomer = false;
+        $this->newCustomerName = '';
+        $this->newCustomerPhone = '';
+
+        session()->flash('success', 'Customer "' . $customer->name . '" created and selected.');
     }
 
     /**
@@ -313,6 +412,8 @@ class PointOfSale extends Component
      */
     public function processSale(): void
     {
+        $this->authorize('create-sale');
+
         if (empty($this->cart)) {
             session()->flash('error', 'Cart is empty');
             return;
@@ -332,9 +433,10 @@ class PointOfSale extends Component
 
         try {
             DB::transaction(function () {
-                // Create the sale with shift_id
+                // Create the sale with shift_id and optional customer_id
                 $sale = Sale::create([
                     'shop_id' => $this->shopId,
+                    'customer_id' => $this->customerId, // NULL for walk-in sales
                     'staff_id' => auth()->id(),
                     'shift_id' => $this->activeShift->id,
                     'subtotal' => $this->subtotal,
@@ -421,10 +523,11 @@ class PointOfSale extends Component
                 $this->lastSale = $sale;
             });
 
-            // Clear cart and close modal
+            // Clear cart, customer, and close modal
             $this->cart = [];
             $this->discount = 0;
             $this->notes = '';
+            $this->clearCustomer();
             $this->saveCart();
             $this->showCheckoutModal = false;
             $this->showReceiptModal = true;
@@ -450,6 +553,7 @@ class PointOfSale extends Component
         $this->showReceiptModal = false;
         $this->lastSale = null;
         $this->amountTendered = 0;
+        $this->clearCustomer();
         unset($this->availableCategories);
     }
 

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Customer;
 use App\Models\Sale;
 use App\Models\Shop;
 use App\Models\User;
@@ -25,7 +26,7 @@ class SaleFactory extends Factory
 
         return [
             'shop_id' => Shop::factory(),
-            'customer_id' => fake()->boolean(70) ? User::factory() : null,
+            'customer_id' => fake()->boolean(70) ? Customer::factory() : null,
             'staff_id' => User::factory(),
             'reservation_id' => null,
             'subtotal' => $subtotal,

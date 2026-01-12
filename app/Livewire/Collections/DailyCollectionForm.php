@@ -6,6 +6,7 @@ use App\Models\Batch;
 use App\Models\DailyCollection;
 use App\Models\EggCategory;
 use App\Models\Farm;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -16,6 +17,7 @@ use Livewire\Component;
 #[Title('Daily Collection Form')]
 class DailyCollectionForm extends Component
 {
+    use AuthorizesRequests;
     public ?int $farmId = null;
     public string $collectionDate = '';
     public string $collectionTime = '';
@@ -146,6 +148,8 @@ class DailyCollectionForm extends Component
      */
     public function submit(): void
     {
+        $this->authorize('create-collection');
+
         $this->validate([
             'farmId' => 'required|exists:farms,id',
             'collectionDate' => 'required|date|before_or_equal:today',

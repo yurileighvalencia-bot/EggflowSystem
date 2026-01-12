@@ -4,6 +4,7 @@ namespace App\Livewire\POS;
 
 use App\Models\Sale;
 use App\Models\Shop;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
@@ -16,6 +17,7 @@ use Livewire\WithPagination;
 #[Title('Transaction History')]
 class TransactionHistory extends Component
 {
+    use AuthorizesRequests;
     use WithPagination;
 
     public ?int $shopId = null;
@@ -136,6 +138,8 @@ class TransactionHistory extends Component
      */
     public function voidSale(): void
     {
+        $this->authorize('manage-inventory');
+
         $this->validate([
             'voidReason' => 'required|min:3',
         ]);

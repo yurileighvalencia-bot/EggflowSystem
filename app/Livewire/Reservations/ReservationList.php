@@ -4,6 +4,7 @@ namespace App\Livewire\Reservations;
 
 use App\Models\Reservation;
 use App\Models\Shop;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -16,6 +17,7 @@ use Livewire\WithPagination;
 #[Title('Reservations')]
 class ReservationList extends Component
 {
+    use AuthorizesRequests;
     use WithPagination;
 
     #[Url]
@@ -100,6 +102,8 @@ class ReservationList extends Component
      */
     public function confirmReservation(int $id): void
     {
+        $this->authorize('manage-reservations');
+
         $reservation = Reservation::findOrFail($id);
         
         if ($reservation->status !== Reservation::STATUS_PENDING) {
@@ -118,6 +122,8 @@ class ReservationList extends Component
      */
     public function markReady(int $id): void
     {
+        $this->authorize('manage-reservations');
+
         $reservation = Reservation::findOrFail($id);
         
         if ($reservation->status !== Reservation::STATUS_CONFIRMED) {
@@ -146,6 +152,8 @@ class ReservationList extends Component
      */
     public function cancelReservation(): void
     {
+        $this->authorize('manage-reservations');
+
         if (!$this->cancellingId) {
             return;
         }

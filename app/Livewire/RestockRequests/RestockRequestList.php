@@ -6,6 +6,7 @@ use App\Events\RestockRequestAcknowledged;
 use App\Models\Farm;
 use App\Models\RestockRequest;
 use App\Models\Shop;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -19,6 +20,7 @@ use Livewire\WithPagination;
 #[Title('Restock Requests')]
 class RestockRequestList extends Component
 {
+    use AuthorizesRequests;
     use WithPagination;
 
     #[Url]
@@ -142,6 +144,8 @@ class RestockRequestList extends Component
      */
     public function acknowledge(int $id): void
     {
+        $this->authorize('acknowledge-restock-request');
+
         $request = RestockRequest::findOrFail($id);
         
         if ($request->status !== RestockRequest::STATUS_PENDING) {

@@ -3,12 +3,13 @@
 namespace App\Livewire\Reservations;
 
 use App\Events\ReservationCreated;
+use App\Models\Customer;
 use App\Models\EggCategory;
 use App\Models\Inventory;
 use App\Models\Reservation;
 use App\Models\ReservationItem;
 use App\Models\Shop;
-use App\Models\User;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
@@ -20,6 +21,7 @@ use Livewire\Component;
 #[Title('Create Reservation')]
 class CreateReservation extends Component
 {
+    use AuthorizesRequests;
     public ?int $shopId = null;
     public ?int $customerId = null;
     public string $customerSearch = '';
@@ -29,10 +31,15 @@ class CreateReservation extends Component
 
     public array $items = [];
     public bool $showCustomerDropdown = false;
+    
+    // Quick add customer
+    public bool $showQuickAddCustomer = false;
+    public string $newCustomerName = '';
+    public string $newCustomerPhone = '';
 
     protected $rules = [
         'shopId' => 'required|exists:shops,id',
-        'customerId' => 'nullable|exists:users,id',
+        'customerId' => 'nullable|exists:customers,id',
         'pickupDate' => 'required|date|after_or_equal:today',
         'pickupTime' => 'nullable|date_format:H:i',
         'items' => 'required|array|min:1',
@@ -97,13 +104,8 @@ class CreateReservation extends Component
             return collect();
         }
 
-        return User::query()
-            ->where(function ($q) {
-                $q->where('name', 'like', "%{$this->customerSearch}%")
-                    ->orWhere('email', 'like', "%{$this->customerSearch}%")
-                    ->orWhere('phone', 'like', "%{$this->customerSearch}%");
-            })
-            ->whereHas('roles', fn($q) => $q->where('name', 'customer'))
+        return Customer::active()
+            ->search($this->customerSearch)
             ->limit(10)
             ->get();
     }
@@ -113,11 +115,12 @@ class CreateReservation extends Component
      */
     public function selectCustomer(int $id): void
     {
-        $customer = User::find($id);
+        $customer = Customer::find($id);
         if ($customer) {
             $this->customerId = $customer->id;
-            $this->customerSearch = $customer->name;
+            $this->customerSearch = $customer->display_name;
             $this->showCustomerDropdown = false;
+            $this->showQuickAddCustomer = false;
         }
     }
 
@@ -128,6 +131,7 @@ class CreateReservation extends Component
     {
         $this->customerId = null;
         $this->customerSearch = '';
+        $this->showQuickAddCustomer = false;
     }
 
     /**
@@ -137,7 +141,41 @@ class CreateReservation extends Component
     {
         $this->customerId = null;
         $this->showCustomerDropdown = strlen($this->customerSearch) >= 2;
+        $this->showQuickAddCustomer = false;
         unset($this->customers);
+    }
+
+    /**
+     * Show quick add customer form.
+     */
+    public function showQuickAdd(): void
+    {
+        $this->showQuickAddCustomer = true;
+        $this->showCustomerDropdown = false;
+        $this->newCustomerName = $this->customerSearch;
+        $this->newCustomerPhone = '';
+    }
+
+    /**
+     * Create a new customer quickly and select them.
+     */
+    public function createQuickCustomer(): void
+    {
+        $this->validate([
+            'newCustomerName' => 'required|min:3|max:255',
+            'newCustomerPhone' => 'nullable|regex:/^[0-9\-\+\s]+$/|max:20',
+        ]);
+
+        $customer = Customer::create([
+            'name' => $this->newCustomerName,
+            'phone' => $this->newCustomerPhone ?: null,
+        ]);
+
+        $this->selectCustomer($customer->id);
+        $this->newCustomerName = '';
+        $this->newCustomerPhone = '';
+
+        session()->flash('success', 'Customer "' . $customer->name . '" created.');
     }
 
     /**
@@ -241,6 +279,8 @@ class CreateReservation extends Component
      */
     public function createReservation(): void
     {
+        $this->authorize('create-reservation');
+
         $this->validate();
 
         try {

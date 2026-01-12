@@ -10,6 +10,7 @@
         "barryvdh/laravel-dompdf": "^3.0",
         "dedoc/scramble": "^0.13.8",
         "dyrynda/laravel-cascade-soft-deletes": "^4.5",
+        "laravel/fortify": "^1.33",
         "laravel/framework": "^12.0",
         "laravel/reverb": "^1.6",
         "laravel/sanctum": "^4.0",

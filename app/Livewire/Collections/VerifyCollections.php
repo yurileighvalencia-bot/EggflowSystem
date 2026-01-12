@@ -4,6 +4,7 @@ namespace App\Livewire\Collections;
 
 use App\Models\DailyCollection;
 use App\Models\Farm;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -15,6 +16,7 @@ use Livewire\WithPagination;
 #[Title('Verify Collections')]
 class VerifyCollections extends Component
 {
+    use AuthorizesRequests;
     use WithPagination;
 
     #[Url]
@@ -132,6 +134,8 @@ class VerifyCollections extends Component
      */
     public function verifySelected(): void
     {
+        $this->authorize('revise-collection');
+
         if (empty($this->selectedCollections)) {
             session()->flash('error', 'No collections selected.');
             return;
@@ -160,6 +164,8 @@ class VerifyCollections extends Component
      */
     public function verifySingle(int $collectionId): void
     {
+        $this->authorize('revise-collection');
+
         $collection = DailyCollection::find($collectionId);
         if ($collection && !$collection->is_verified) {
             $collection->verify(auth()->id());

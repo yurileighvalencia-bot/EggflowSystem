@@ -4,11 +4,13 @@ namespace App\Livewire\POS;
 
 use App\Models\Shift;
 use App\Models\Shop;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
 class OpenRegisterModal extends Component
 {
+    use AuthorizesRequests;
     public bool $show = false;
     public ?int $shopId = null;
 
@@ -82,6 +84,8 @@ class OpenRegisterModal extends Component
      */
     public function openShift(): void
     {
+        $this->authorize('create-sale');
+
         $user = auth()->user();
 
         // Check if user already has an open shift

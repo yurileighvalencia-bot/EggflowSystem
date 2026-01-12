@@ -10,6 +10,7 @@ use App\Models\EggCategory;
 use App\Models\Inventory;
 use App\Models\RestockRequest;
 use App\Models\Shop;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -20,6 +21,7 @@ use Livewire\Component;
 #[Title('Dispatch Delivery')]
 class DispatchDelivery extends Component
 {
+    use AuthorizesRequests;
     public ?int $shopId = null;
     public ?int $restockRequestId = null;
     public string $notes = '';
@@ -193,6 +195,8 @@ class DispatchDelivery extends Component
      */
     public function submit(): void
     {
+        $this->authorize('dispatch-delivery');
+
         $this->validate([
             'shopId' => 'required|exists:shops,id',
         ]);

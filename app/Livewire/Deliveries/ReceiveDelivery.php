@@ -7,6 +7,7 @@ use App\Models\Delivery;
 use App\Models\DeliveryDiscrepancy;
 use App\Models\Inventory;
 use App\Models\WastageLog;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -17,6 +18,7 @@ use Livewire\Component;
 #[Title('Receive Delivery')]
 class ReceiveDelivery extends Component
 {
+    use AuthorizesRequests;
     public Delivery $delivery;
 
     /**
@@ -137,6 +139,8 @@ class ReceiveDelivery extends Component
      */
     public function submit(): void
     {
+        $this->authorize('receive-delivery');
+
         // Validate rejection reasons if there are rejected items
         foreach ($this->receiveData as $data) {
             if ($data['rejected'] > 0 && empty($data['reason'])) {

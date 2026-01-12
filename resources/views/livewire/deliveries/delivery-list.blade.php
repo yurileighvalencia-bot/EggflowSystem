@@ -5,12 +5,23 @@
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Deliveries</h1>
             <p class="text-gray-600 dark:text-gray-400">Track and manage egg deliveries</p>
         </div>
-        <a href="{{ route('deliveries.dispatch') }}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            Dispatch Delivery
-        </a>
+        <div class="flex items-center gap-3">
+            <a href="{{ route('deliveries.discrepancies') }}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/50">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                Discrepancies
+                @if($this->stats['disputed'] > 0)
+                    <span class="ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full">{{ $this->stats['disputed'] }}</span>
+                @endif
+            </a>
+            <a href="{{ route('deliveries.dispatch') }}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Dispatch Delivery
+            </a>
+        </div>
     </div>
 
     {{-- Stats Cards --}}
@@ -157,6 +168,17 @@
                                             </svg>
                                         </a>
                                     @endif
+                                    @if($delivery->status === 'received' || $delivery->status === 'partial')
+                                        <button 
+                                            wire:click="$dispatch('open-discrepancy-form', { deliveryId: {{ $delivery->id }} })"
+                                            class="p-1 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300" 
+                                            title="Report Issue"
+                                        >
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                            </svg>
+                                        </button>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -178,4 +200,7 @@
             </div>
         @endif
     </div>
+
+    {{-- Report Discrepancy Slide-over --}}
+    @livewire('deliveries.report-discrepancy')
 </div>

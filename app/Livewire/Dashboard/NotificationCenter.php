@@ -11,7 +11,7 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-#[Layout('components.layouts.dashboard')]
+#[Layout('layouts.app')]
 #[Title('Notification Center')]
 class NotificationCenter extends Component
 {

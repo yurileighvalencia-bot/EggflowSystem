@@ -162,6 +162,8 @@
     <div class="flex justify-end">
         <button 
             wire:click="showConfirm"
+            wire:loading.attr="disabled"
+            wire:loading.class="opacity-75 cursor-not-allowed"
             @if($this->totalQuantity <= 0 || !$shopId) disabled @endif
             class="inline-flex items-center px-6 py-3 text-base font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >

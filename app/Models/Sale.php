@@ -87,9 +87,13 @@ class Sale extends Model implements Auditable
         return $this->belongsTo(Shop::class);
     }
 
+    /**
+     * Get the customer who made the purchase.
+     * NULL for walk-in/anonymous sales.
+     */
     public function customer(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'customer_id');
+        return $this->belongsTo(Customer::class);
     }
 
     public function staff(): BelongsTo

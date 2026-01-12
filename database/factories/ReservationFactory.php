@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Customer;
 use App\Models\Reservation;
 use App\Models\Shop;
 use App\Models\User;
@@ -21,7 +22,7 @@ class ReservationFactory extends Factory
     {
         return [
             'shop_id' => Shop::factory(),
-            'customer_id' => User::factory(),
+            'customer_id' => Customer::factory(),
             'status' => Reservation::STATUS_PENDING,
             'pickup_date' => now()->addDays(fake()->numberBetween(1, 3))->toDateString(),
             'expires_at' => now()->addDays(3),

@@ -93,9 +93,13 @@ class Reservation extends Model implements Auditable
         return $this->belongsTo(Shop::class);
     }
 
+    /**
+     * Get the customer who made the reservation.
+     * NULL for anonymous reservations.
+     */
     public function customer(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'customer_id');
+        return $this->belongsTo(Customer::class);
     }
 
     public function cancelledBy(): BelongsTo

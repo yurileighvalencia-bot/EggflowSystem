@@ -3,6 +3,7 @@
 namespace App\Livewire\Settings;
 
 use App\Models\EggCategory;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -15,6 +16,7 @@ use Livewire\WithPagination;
 #[Title('Category Management')]
 class CategoryManagement extends Component
 {
+    use AuthorizesRequests;
     use WithPagination;
 
     #[Url]
@@ -127,6 +129,8 @@ class CategoryManagement extends Component
 
     public function save(): void
     {
+        $this->authorize('manage-settings');
+
         $this->validate();
 
         $data = [
@@ -167,6 +171,8 @@ class CategoryManagement extends Component
 
     public function delete(): void
     {
+        $this->authorize('manage-settings');
+
         if (!$this->deletingCategory) {
             return;
         }
@@ -191,6 +197,8 @@ class CategoryManagement extends Component
 
     public function toggleActive(int $id): void
     {
+        $this->authorize('manage-settings');
+
         $category = EggCategory::findOrFail($id);
         $category->update(['is_active' => !$category->is_active]);
         

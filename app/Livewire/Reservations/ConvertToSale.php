@@ -9,6 +9,7 @@ use App\Models\Reservation;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\Shift;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -19,6 +20,7 @@ use Livewire\Component;
 #[Title('Convert Reservation to Sale')]
 class ConvertToSale extends Component
 {
+    use AuthorizesRequests;
     public Reservation $reservation;
     
     public string $paymentMethod = 'cash';
@@ -100,6 +102,8 @@ class ConvertToSale extends Component
      */
     public function convertToSale(): void
     {
+        $this->authorize('create-sale');
+
         if (!$this->activeShift) {
             session()->flash('error', 'No active shift. Please open a shift first.');
             $this->showConfirmModal = false;

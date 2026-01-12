@@ -72,6 +72,16 @@ class DeliveryList extends Component
     }
 
     /**
+     * Refresh list when discrepancy is reported.
+     */
+    #[On('discrepancy-reported')]
+    public function handleDiscrepancyReported(): void
+    {
+        unset($this->deliveries);
+        unset($this->stats);
+    }
+
+    /**
      * Get all shops for filter.
      */
     #[Computed]

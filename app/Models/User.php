@@ -32,6 +32,7 @@ class User extends Authenticatable implements Auditable, MustVerifyEmail
         'phone',
         'address',
         'is_active',
+        'notification_preferences',
     ];
 
     /**
@@ -55,7 +56,57 @@ class User extends Authenticatable implements Auditable, MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'notification_preferences' => 'array',
         ];
+    }
+
+    /**
+     * Default notification preferences.
+     */
+    public static function defaultNotificationPreferences(): array
+    {
+        return [
+            'email' => [
+                'low_stock_alert' => true,
+                'batch_expired' => true,
+                'delivery_dispatched' => true,
+                'delivery_received' => true,
+                'discrepancy_reported' => true,
+                'discrepancy_resolved' => true,
+                'new_restock_request' => true,
+                'restock_acknowledged' => true,
+                'reservation_created' => true,
+                'reservation_confirmed' => true,
+                'reservation_cancelled' => true,
+                'reservation_expired' => true,
+                'pickup_reminder' => true,
+            ],
+            'database' => [
+                'low_stock_alert' => true,
+                'batch_expired' => true,
+                'delivery_dispatched' => true,
+                'delivery_received' => true,
+                'discrepancy_reported' => true,
+                'discrepancy_resolved' => true,
+                'new_restock_request' => true,
+                'restock_acknowledged' => true,
+                'reservation_created' => true,
+                'reservation_confirmed' => true,
+                'reservation_cancelled' => true,
+                'reservation_expired' => true,
+                'pickup_reminder' => true,
+            ],
+        ];
+    }
+
+    /**
+     * Get notification preference for a specific type and channel.
+     */
+    public function getNotificationPreference(string $type, string $channel = 'database'): bool
+    {
+        $preferences = $this->notification_preferences ?? self::defaultNotificationPreferences();
+        
+        return $preferences[$channel][$type] ?? true;
     }
 
     /**

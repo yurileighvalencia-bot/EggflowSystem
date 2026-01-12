@@ -1,29 +1,31 @@
 <div class="space-y-6">
     {{-- Header --}}
-    <div class="flex justify-between items-center">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">User Management</h1>
-            <p class="text-gray-600 dark:text-gray-400">Manage system users and permissions</p>
-        </div>
-        <button wire:click="openCreateModal"
-            class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg flex items-center gap-2 transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
-            </svg>
-            Add User
-        </button>
-    </div>
+    <x-page-header 
+        title="User Management" 
+        description="Manage system users and permissions"
+    >
+        <x-slot:actions>
+            <x-button wire:click="openCreateModal" variant="primary">
+                <x-slot:iconLeft>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                    </svg>
+                </x-slot:iconLeft>
+                Add User
+            </x-button>
+        </x-slot:actions>
+    </x-page-header>
 
     {{-- Flash Messages --}}
     @if (session()->has('message'))
-        <div class="p-4 bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 rounded-lg">
+        <x-alert type="success" dismissible>
             {{ session('message') }}
-        </div>
+        </x-alert>
     @endif
     @if (session()->has('error'))
-        <div class="p-4 bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg">
+        <x-alert type="error" dismissible>
             {{ session('error') }}
-        </div>
+        </x-alert>
     @endif
 
     {{-- Stats --}}

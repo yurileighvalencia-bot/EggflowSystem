@@ -7,6 +7,7 @@ use App\Models\EggCategory;
 use App\Models\Inventory;
 use App\Models\Shop;
 use App\Models\WastageLog;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
@@ -18,6 +19,7 @@ use Livewire\Component;
 #[Title('Log Wastage')]
 class LogWastage extends Component
 {
+    use AuthorizesRequests;
     public ?int $shopId = null;
     public ?int $categoryId = null;
     public ?int $batchId = null;
@@ -174,6 +176,8 @@ class LogWastage extends Component
      */
     public function logWastage(): void
     {
+        $this->authorize('log-wastage');
+
         $this->validate();
 
         if ($this->quantity > $this->maxQuantity) {

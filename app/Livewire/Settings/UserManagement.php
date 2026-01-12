@@ -5,6 +5,7 @@ namespace App\Livewire\Settings;
 use App\Models\Farm;
 use App\Models\Shop;
 use App\Models\User;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Attributes\Computed;
@@ -19,6 +20,7 @@ use Spatie\Permission\Models\Role;
 #[Title('User Management')]
 class UserManagement extends Component
 {
+    use AuthorizesRequests;
     use WithPagination;
 
     #[Url]
@@ -171,6 +173,8 @@ class UserManagement extends Component
 
     public function save(): void
     {
+        $this->authorize('manage-users');
+
         $this->validate();
 
         $data = [
@@ -226,6 +230,8 @@ class UserManagement extends Component
 
     public function resetPassword(): void
     {
+        $this->authorize('manage-users');
+
         $this->validate([
             'new_password' => ['required', 'confirmed', Password::defaults()],
         ]);
@@ -254,6 +260,8 @@ class UserManagement extends Component
 
     public function delete(): void
     {
+        $this->authorize('manage-users');
+
         if (!$this->deletingUser) {
             return;
         }
@@ -273,6 +281,8 @@ class UserManagement extends Component
 
     public function toggleActive(int $id): void
     {
+        $this->authorize('manage-users');
+
         $user = User::findOrFail($id);
 
         // Prevent deactivating yourself

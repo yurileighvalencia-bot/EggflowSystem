@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Batch;
+use App\Models\Customer;
 use App\Models\DailyCollection;
 use App\Models\Delivery;
 use App\Models\DeliveryItem;
@@ -36,11 +37,15 @@ class DemoDataSeeder extends Seeder
         $manager = User::whereHas('roles', fn ($q) => $q->where('name', 'manager'))->first();
         $farmStaff = User::whereHas('roles', fn ($q) => $q->where('name', 'farm_staff'))->first();
         $shopStaff = User::whereHas('roles', fn ($q) => $q->where('name', 'shop_staff'))->first();
-        $customer = User::whereHas('roles', fn ($q) => $q->where('name', 'customer'))->first();
 
-        // Create additional customers
-        $customers = User::factory(10)->customer()->create();
-        $this->command->info('Created 10 additional customers');
+        // Create customers (using Customer model, not User)
+        $customers = Customer::factory(15)->create();
+        
+        // Create some business customers with higher credit limits
+        $businessCustomers = Customer::factory(3)->business()->create();
+        $customers = $customers->merge($businessCustomers);
+        
+        $this->command->info('Created ' . $customers->count() . ' customers');
 
         // Create daily collections for the past 30 days
         $this->seedDailyCollections($farm, $farmStaff, $categories);
@@ -51,8 +56,8 @@ class DemoDataSeeder extends Seeder
         // Create restock requests and deliveries
         $this->seedRestockAndDeliveries($shop, $farm, $batches, $shopStaff, $farmStaff, $categories);
         
-        // Create reservations
-        $this->seedReservations($shop, $customers->push($customer), $categories);
+        // Create reservations (now using Customer model)
+        $this->seedReservations($shop, $customers, $categories);
         
         // Create sales
         $this->seedSales($shop, $shopStaff, $batches, $customers, $categories);
@@ -246,11 +251,31 @@ class DemoDataSeeder extends Seeder
 
     private function seedSales(Shop $shop, User $staff, array $batches, $customers, $categories): void
     {
-        // Create walk-in sales
-        for ($i = 0; $i < 15; $i++) {
+        // Create walk-in sales (no customer)
+        for ($i = 0; $i < 10; $i++) {
             $sale = Sale::factory()->walkIn()->create([
                 'shop_id' => $shop->id,
                 'staff_id' => $staff->id,
+            ]);
+
+            $category = $categories->random();
+            $batch = collect($batches)->where('egg_category_id', $category->id)->first();
+            
+            if ($batch) {
+                SaleItem::factory()->create([
+                    'sale_id' => $sale->id,
+                    'batch_id' => $batch->id,
+                    'egg_category_id' => $category->id,
+                ]);
+            }
+        }
+
+        // Create sales with known customers
+        foreach ($customers->take(8) as $customer) {
+            $sale = Sale::factory()->create([
+                'shop_id' => $shop->id,
+                'staff_id' => $staff->id,
+                'customer_id' => $customer->id,
             ]);
 
             $category = $categories->random();

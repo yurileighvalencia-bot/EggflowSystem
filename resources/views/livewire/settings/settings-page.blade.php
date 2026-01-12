@@ -1,15 +1,15 @@
 <div class="space-y-6">
     {{-- Header --}}
-    <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
-        <p class="text-gray-600 dark:text-gray-400">Configure system preferences</p>
-    </div>
+    <x-page-header 
+        title="Settings" 
+        description="Configure system preferences"
+    />
 
     {{-- Flash Message --}}
     @if (session()->has('message'))
-        <div class="p-4 bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 rounded-lg">
+        <x-alert type="success" dismissible>
             {{ session('message') }}
-        </div>
+        </x-alert>
     @endif
 
     <div class="flex flex-col md:flex-row gap-6">

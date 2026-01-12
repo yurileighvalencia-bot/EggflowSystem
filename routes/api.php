@@ -32,7 +32,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 // API Version 1
-Route::prefix('v1')->group(function () {
+Route::prefix('v1')->name('api.')->group(function () {
     // Public routes with auth rate limiting
     Route::middleware('throttle:auth')->group(function () {
         Route::post('/login', [AuthController::class, 'login'])->name('login');
